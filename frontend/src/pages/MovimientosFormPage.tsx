@@ -9,7 +9,7 @@ export function MovimientosFormPage() {
   const [fecha, setFecha] = useState(() => new Date().toISOString().slice(0, 10));
   const [tipo, setTipo] = useState<"entrada" | "salida">("salida");
   const [cantidad, setCantidad] = useState(1);
-  const [destino, setDestino] = useState(DESTINOS_HABITUALES[0]);
+  const [destino, setDestino] = useState<string>(DESTINOS_HABITUALES[0]);
   const [mensaje, setMensaje] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
