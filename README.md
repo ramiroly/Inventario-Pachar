@@ -1,4 +1,4 @@
-# Sistema de Inventario — Destilería Ancopacha
+# Sistema de Inventario — Destilería Pachar
 
 Reemplaza el flujo de Excel semanal + dashboards HTML manuales por un sistema web con login,
 carga de movimientos de stock, y generación bajo demanda de los mismos dashboards interactivos.

@@ -21,7 +21,7 @@ export function LoginPage() {
 
   return (
     <div style={{ maxWidth: 320, margin: "4rem auto" }}>
-      <h1>Inventario Ancopacha</h1>
+      <h1>Inventario Pachar</h1>
       <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
         <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required />
         <input
