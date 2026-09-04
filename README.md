@@ -31,7 +31,7 @@ Los `TODO` en el código marcan estos puntos.
    ```
 
 2. **Crear el proyecto en Supabase** y, en el dashboard, ir a *SQL Editor* y correr en orden
-   los archivos de `backend/src/db/migrations/` (001 a 006), y luego `backend/src/db/seed/seed_lineas.sql`.
+   los archivos de `backend/src/db/migrations/` (001 a 007), y luego `backend/src/db/seed/seed_lineas.sql`.
 
 3. **Crear usuarios y perfiles**: en *Authentication > Users* del dashboard de Supabase, crear
    un usuario por cada persona (Ramiro, Walter, Haresh, Ishmael, Joaquín), y para cada uno
