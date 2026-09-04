@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
 
 export function LoginPage() {
@@ -34,6 +34,9 @@ export function LoginPage() {
         <button type="submit">Ingresar</button>
         {error && <p style={{ color: "crimson" }}>{error}</p>}
       </form>
+      <p>
+        <Link to="/recuperar">¿Olvidaste tu contraseña?</Link>
+      </p>
     </div>
   );
 }

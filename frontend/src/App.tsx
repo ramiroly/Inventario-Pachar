@@ -3,6 +3,7 @@ import { Navbar } from "./components/Navbar";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { LoginPage } from "./pages/LoginPage";
 import { SetPasswordPage } from "./pages/SetPasswordPage";
+import { RecoverPasswordPage } from "./pages/RecoverPasswordPage";
 import { DashboardStockPage } from "./pages/DashboardStockPage";
 import { DashboardComparativoPage } from "./pages/DashboardComparativoPage";
 import { DashboardLiquidosPage } from "./pages/DashboardLiquidosPage";
@@ -30,6 +31,7 @@ export default function App() {
       <Navbar />
       <Routes>
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/recuperar" element={<RecoverPasswordPage />} />
         <Route path="/set-password" element={<SetPasswordPage />} />
         <Route
           path="/"

@@ -13,14 +13,28 @@ export function useAuth(): AuthState {
   const [session, setSession] = useState<Session | null>(null);
   const [rol, setRol] = useState<Rol | null>(null);
   const [loading, setLoading] = useState(true);
+  // getSession() es async y onAuthStateChange puede tardar un instante en
+  // disparar; hasta que uno de los dos responda, session=null NO significa
+  // "sin sesión", significa "todavía no lo sabemos". Sin este flag, el efecto
+  // de abajo confundía "no hay sesión todavía" con "sesión null real" y
+  // marcaba loading=false antes de tiempo (por ej. justo después de
+  // verifyOtp(), mandando a SetPasswordPage de vuelta al login).
+  const [sessionChecked, setSessionChecked] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => setSession(data.session));
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, s) => setSession(s));
+    supabase.auth.getSession().then(({ data }) => {
+      setSession(data.session);
+      setSessionChecked(true);
+    });
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, s) => {
+      setSession(s);
+      setSessionChecked(true);
+    });
     return () => sub.subscription.unsubscribe();
   }, []);
 
   useEffect(() => {
+    if (!sessionChecked) return;
     if (!session) {
       setRol(null);
       setLoading(false);
@@ -36,7 +50,7 @@ export function useAuth(): AuthState {
         setRol((data?.rol as Rol) ?? null);
         setLoading(false);
       });
-  }, [session]);
+  }, [session, sessionChecked]);
 
   return { session, rol, loading };
 }
