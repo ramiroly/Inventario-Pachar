@@ -1,21 +1,15 @@
 -- Tanques de líquidos (terminado o subproducto) por línea.
 --
--- Capacidades conocidas (referencia, no se fuerzan por constraint porque hay excepciones):
---   terminados                         -> 2500L estándar
---   subproductos Matacuy                -> 650L (confirmar excepciones caso a caso,
---                                          ej. Extracción Base Botánica = 2 tanques de 600L)
---   Salqa Azul subs                     -> 1100L
---   Botanizado subs                     -> 650L
---   Añejo K5 / Reposo Wisky Mash        -> 2500L
---   Salqa Verde Donayres                -> 2500L (o 2500+1000 según corte)
---   Nuevos subproductos sin capacidad definida -> preguntar a Ramiro antes de asumir.
---     Por eso capacidad_litros es NULLABLE: NULL = capacidad pendiente de confirmar.
+-- Las capacidades reales de los 28 tanques existentes al 01/09/2026 están
+-- cargadas en seed/seed_tanques_liquidos.sql (extraídas del dashboard
+-- histórico de líquidos). capacidad_litros queda NULLABLE para tanques
+-- nuevos que se agreguen después y cuya capacidad todavía no se confirmó.
 create table if not exists tanques_liquidos (
   id uuid primary key default gen_random_uuid(),
   linea_id uuid not null references lineas(id) on delete restrict,
   nombre text not null,
   tipo text not null check (tipo in ('terminado', 'subproducto')),
-  capacidad_litros numeric, -- TODO: confirmar con Ramiro cuando sea NULL
+  capacidad_litros numeric, -- NULL = capacidad de un tanque nuevo aun sin confirmar
   lote text
 );
 

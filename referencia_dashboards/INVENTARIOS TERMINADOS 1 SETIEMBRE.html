@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang='es'>
+<head>
+<meta charset='UTF-8'>
+<meta name='viewport' content='width=device-width,initial-scale=1'>
+<title>Dashboard Terminados 29 Jun 2026</title>
+<script src='https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js'></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#EEF2EE;color:#1A2E1A;font-size:13px}
+.hdr{background:linear-gradient(135deg,#1B4332,#2D6A4F,#40916C);color:#fff;padding:20px 36px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}
+.hdr h1{font-size:19px;font-weight:700}.hdr p{font-size:11px;opacity:.7;margin-top:2px}
+.badges{display:flex;gap:10px;flex-wrap:wrap}
+.badge{background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.2);border-radius:8px;padding:7px 14px;text-align:center;min-width:80px}
+.badge strong{display:block;font-size:18px;font-weight:700;line-height:1.1}
+.badge span{font-size:10px;opacity:.75;text-transform:uppercase;letter-spacing:.04em}
+.badge.ok{background:rgba(80,220,120,.2)}.badge.danger{background:rgba(220,60,60,.2)}
+.wrap{padding:22px 36px 36px;max-width:1440px;margin:0 auto}
+.sec{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:#2D6A4F;border-left:3px solid #2D6A4F;padding-left:8px;margin:0 0 13px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px}
+.g31{display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:18px}
+.card{background:#fff;border-radius:10px;padding:16px 18px;box-shadow:0 1px 4px rgba(0,0,0,.07)}
+.card-t{font-size:11px;font-weight:600;color:#374151;margin-bottom:10px}
+.kgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
+.kpi{background:#fff;border-radius:10px;padding:13px 15px;border-top:4px solid #2D6A4F;box-shadow:0 1px 4px rgba(0,0,0,.07)}
+.kpi.red{border-top-color:#C0392B}.kpi.amb{border-top-color:#D4811A}.kpi.blu{border-top-color:#1A5276}.kpi.grn{border-top-color:#27AE60}
+.kl{font-size:9px;text-transform:uppercase;letter-spacing:.07em;color:#6B7280;margin-bottom:3px}
+.kv{font-size:22px;font-weight:700;line-height:1}
+.kv.red{color:#C0392B}.kv.grn{color:#1B6B3A}.kv.amb{color:#D4811A}
+.kd{font-size:10px;margin-top:3px;color:#9CA3AF}
+.leg{display:flex;flex-wrap:wrap;gap:9px;margin-bottom:9px}
+.leg span{display:flex;align-items:center;gap:4px;font-size:10px;color:#6B7280}
+.lsq{width:9px;height:9px;border-radius:2px;flex-shrink:0}
+.filters{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:12px}
+.fbtn{background:#F3F4F6;border:1px solid #E5E7EB;border-radius:20px;padding:4px 11px;font-size:11px;cursor:pointer;transition:all .2s;color:#374151;font-family:inherit}
+.fbtn:hover,.fbtn.active{background:#2D6A4F;color:#fff;border-color:#2D6A4F}
+table{width:100%;border-collapse:collapse;font-size:11px}
+thead th{background:#F3F7F3;padding:6px 8px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#52735C;border-bottom:1px solid #D1E7D1}
+tbody td{padding:6px 8px;border-bottom:1px solid #F0F4F0;vertical-align:middle}
+tbody tr:hover td{background:#F8FBF8}
+tbody tr:last-child td{border-bottom:none}
+.pill{display:inline-flex;font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px}
+.p-ok{background:#D1FAE5;color:#065F46}.p-warn{background:#FEF3C7;color:#92400E}.p-danger{background:#FEE2E2;color:#991B1B}
+.alert-bar{background:#FEF2F2;border:1px solid #FECACA;border-radius:8px;padding:11px 15px;margin-bottom:18px}
+.alert-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.atag{font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px}
+.atag.red{background:#FEE2E2;color:#991B1B}.atag.amber{background:#FEF3C7;color:#92400E}
+.sem-row{display:flex;align-items:center;gap:7px;margin-bottom:5px}
+.sem-label{font-size:10px;font-weight:500;min-width:165px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sem-bar-wrap{flex:1;background:#F0F4F0;border-radius:4px;height:20px;overflow:hidden}
+.sem-bar{height:100%;border-radius:4px;display:flex;align-items:center;padding-left:6px}
+.sem-val{font-size:10px;color:#fff;font-weight:700;white-space:nowrap}
+.sem-extra{font-size:10px;min-width:165px;text-align:right;flex-shrink:0;font-weight:600}
+.cajas-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:14px}
+.caja-card{background:#F8FBF8;border-radius:8px;padding:10px 12px;border:1px solid #D1E7D1}
+.caja-linea{font-size:10px;font-weight:700;margin-bottom:6px;border-bottom:1px solid #D1E7D1;padding-bottom:4px}
+.caja-row{display:flex;justify-content:space-between;font-size:10px;color:#374151;margin-bottom:3px;gap:6px;align-items:flex-start}
+.caja-row span:first-child{color:#6B7280;flex-shrink:0}
+.caja-row span:last-child{font-weight:700;text-align:right}
+#tt{position:fixed;background:#1A2E1A;color:#fff;border-radius:10px;padding:12px 16px;font-size:11px;pointer-events:none;z-index:9999;min-width:210px;max-width:290px;box-shadow:0 4px 20px rgba(0,0,0,.3);display:none}
+.tt-title{font-size:12px;font-weight:700;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid rgba(255,255,255,.2)}
+.tt-row{display:flex;justify-content:space-between;gap:10px;margin-bottom:3px}
+.tt-lbl{color:rgba(255,255,255,.65)}.tt-val{font-weight:700}
+.tt-sub{color:rgba(255,255,255,.5);font-size:10px;margin-bottom:4px}
+.footer{text-align:center;padding:12px;font-size:10px;color:#9CA3AF;border-top:1px solid #D1E7D1;margin-top:6px}
+</style>
+</head>
+<body>
+<div id='tt'></div>
+<div class='hdr'>
+  <div>
+    <h1>Dashboard &mdash; Productos Terminados</h1>
+    <p>Destiler&iacute;a Ancopacha &nbsp;&middot;&nbsp; Corte: 01 de setiembre 2026 &nbsp;&middot;&nbsp; Revisi&oacute;n interna de operaciones</p>
+  </div>
+  <div class='badges'>
+    <div class='badge ok'><strong id='hTotal'>-</strong><span>Unid. en stock</span></div>
+    <div class='badge'><strong>8</strong><span>L&iacute;neas</span></div>
+    <div class='badge'><strong id='hSKUs'>-</strong><span>Con stock</span></div>
+    <div class='badge danger'><strong id='hCero'>-</strong><span>Agotados</span></div>
+  </div>
+</div>
+<div class='wrap'>
+<div class='kgrid' style='padding-top:4px'>
+  <div class='kpi grn'><div class='kl'>Stock total</div><div class='kv grn' id='kTotal'>-</div><div class='kd' id='kTSub'>-</div></div>
+  <div class='kpi blu'><div class='kl'>L&iacute;nea dominante</div><div class='kv' style='font-size:16px' id='kTop'>-</div><div class='kd' id='kTopSub'>-</div></div>
+  <div class='kpi amb'><div class='kl'>SKUs en alerta</div><div class='kv amb' id='kWarn'>-</div><div class='kd'>Menos de 60 unidades</div></div>
+  <div class='kpi red'><div class='kl'>SKUs agotados</div><div class='kv red' id='kAgot'>-</div><div class='kd' id='kAgotSub'>-</div></div>
+</div>
+<div class='alert-bar' id='alertBar'></div>
+<p class='sec'>Stock por l&iacute;nea de producto &mdash; diferenciado por presentaci&oacute;n (750 ml &middot; 375 ml &middot; 50 ml)</p>
+<div class='card' style='margin-bottom:18px'>
+  <div class='card-t'>Unidades en stock por l&iacute;nea y formato &middot; Pasa el cursor sobre las barras para ver el detalle de cajas</div>
+  <div class='leg'>
+    <span><span class='lsq' style='background:#1A5276'></span>750 ml &mdash; 6 u/caja (incluye versión inglés)</span>
+    <span><span class='lsq' style='background:#117A65'></span>375 ml &mdash; 6 u/caja</span>
+    <span><span class='lsq' style='background:#D4811A'></span>50 ml &mdash; 60 u/caja &middot; Matacuy 50ml: 111 u/plancha</span>
+  </div>
+  <div style='position:relative;width:100%;height:360px'><canvas id='cMain'></canvas></div>
+  <div style='margin-top:16px'>
+    <div style='font-size:11px;font-weight:600;color:#374151;margin-bottom:10px'>Desglose en cajas / planchas y unidades sueltas por l&iacute;nea</div>
+    <div class='cajas-grid' id='cajasGrid'></div>
+  </div>
+</div>
+<p class='sec'>Distribuci&oacute;n del stock por presentaci&oacute;n</p>
+<div class='g2'>
+  <div class='card'>
+    <div class='card-t'>Participaci&oacute;n &mdash; Presentaci&oacute;n 750 ml (solo l&iacute;neas con stock)</div>
+    <div style='position:relative;width:100%;height:230px'><canvas id='cD750'></canvas></div>
+    <div class='leg' id='leg750' style='justify-content:center;margin-top:8px'></div>
+  </div>
+  <div class='card'>
+    <div class='card-t'>Participaci&oacute;n &mdash; Presentaci&oacute;n 375 ml (solo l&iacute;neas con stock)</div>
+    <div style='position:relative;width:100%;height:230px'><canvas id='cD375'></canvas></div>
+    <div class='leg' id='leg375' style='justify-content:center;margin-top:8px'></div>
+  </div>
+</div>
+
+<p class="sec">Salidas de productos por destino &mdash; 04 ago al 01 sep 2026</p>
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:18px" id="secSalidas">
+  <div class="card" style="display:flex;flex-direction:column;gap:10px">
+    <div class="card-t">Resumen de salidas del per&iacute;odo</div>
+    <div style="text-align:center;padding:10px 0">
+      <div style="font-size:11px;color:#6B7280;text-transform:uppercase;letter-spacing:.07em">Total despachado</div>
+      <div style="font-size:36px;font-weight:700;color:#0F6E56;line-height:1.1" id="sTotalNum">-</div>
+      <div style="font-size:11px;color:#9CA3AF">unidades &middot; 04 ago&ndash;01 sep 2026 (incl. garrafas 4L)</div>
+    </div>
+    <div id="sDestKpis" style="display:flex;flex-direction:column;gap:5px"></div>
+  </div>
+  <div class="card">
+    <div class="card-t">Distribuci&oacute;n por destino (%)</div>
+    <div style="position:relative;height:190px"><canvas id="cSalidaDest"></canvas></div>
+    <div id="sDestLeg" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;justify-content:center"></div>
+  </div>
+  <div class="card">
+    <div class="card-t">Unidades despachadas por l&iacute;nea</div>
+    <div style="position:relative;height:220px"><canvas id="cSalidaLinea"></canvas></div>
+  </div>
+</div>
+
+<p class="sec">Cobertura estimada y alertas de reposici&oacute;n &mdash; salidas 04 ago&ndash;01 sep (4 semanas)</p>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px" id="secCoverage">
+  <div class="card">
+    <div class="card-t">Semanas de cobertura estimada por l&iacute;nea &nbsp;&middot;&nbsp; <span style="color:#C0392B">&#9632;</span> &lt;2 sem &nbsp;<span style="color:#D4811A">&#9632;</span> 2&ndash;4 sem &nbsp;<span style="color:#27AE60">&#9632;</span> &gt;4 sem</div>
+    <div id="coverageRows"></div>
+  </div>
+  <div class="card">
+    <div class="card-t">Alertas de reposici&oacute;n &mdash; ordenadas por urgencia</div>
+    <table style="width:100%;border-collapse:collapse;font-size:11px" id="alertTable">
+      <thead><tr>
+        <th style="background:#F3F7F3;padding:5px 8px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;color:#52735C;border-bottom:1px solid #D1E7D1">L&iacute;nea</th>
+        <th style="background:#F3F7F3;padding:5px 8px;text-align:right;font-size:10px;font-weight:700;text-transform:uppercase;color:#52735C;border-bottom:1px solid #D1E7D1">Stock</th>
+        <th style="background:#F3F7F3;padding:5px 8px;text-align:right;font-size:10px;font-weight:700;text-transform:uppercase;color:#52735C;border-bottom:1px solid #D1E7D1">Salidas/sem</th>
+        <th style="background:#F3F7F3;padding:5px 8px;text-align:right;font-size:10px;font-weight:700;text-transform:uppercase;color:#52735C;border-bottom:1px solid #D1E7D1">Cobertura</th>
+        <th style="background:#F3F7F3;padding:5px 8px;text-align:center;font-size:10px;font-weight:700;text-transform:uppercase;color:#52735C;border-bottom:1px solid #D1E7D1">Estado</th>
+      </tr></thead>
+      <tbody id="alertTBody"></tbody>
+    </table>
+  </div>
+</div>
+<p class='sec'>Sem&aacute;foro de criticidad por SKU &mdash; stock, cajas y unidades sueltas</p>
+<div class='g31'>
+  <div class='card'>
+    <div class='card-t'>Estado de stock por producto con desglose &middot; Filtrar por l&iacute;nea:</div>
+    <div class='filters' id='semF'>
+      <button class='fbtn active' onclick='fSem("all",this)'>Todos</button>
+      <button class='fbtn' onclick='fSem("Matacuy",this)'>Matacuy</button>
+      <button class='fbtn' onclick='fSem("Salqa Azul",this)'>Salqa Azul</button>
+      <button class='fbtn' onclick='fSem("Salqa Verde",this)'>Salqa Verde</button>
+      <button class='fbtn' onclick='fSem("A&ntilde;ejo",this)'>A&ntilde;ejo</button>
+      <button class='fbtn' onclick='fSem("Reposado",this)'>Reposado</button>
+      <button class='fbtn' onclick='fSem("Cosecha",this)'>Cosecha</button>
+      <button class='fbtn' onclick='fSem("Botanizado",this)'>Botanizado</button>
+      <button class='fbtn' onclick='fSem("Licor de Caf&eacute;",this)'>Licor de Caf&eacute;</button>
+    </div>
+    <div class='leg'>
+      <span><span class='lsq' style='background:#27AE60'></span>Saludable (&ge;60)</span>
+      <span><span class='lsq' style='background:#D4811A'></span>Alerta (1&ndash;59)</span>
+      <span><span class='lsq' style='background:#C0392B'></span>Agotado (0)</span>
+    </div>
+    <div id='semC' style='max-height:500px;overflow-y:auto;padding-right:4px'></div>
+  </div>
+  <div class='card'>
+    <div class='card-t'>Stock total por formato</div>
+    <div style='position:relative;width:100%;height:220px'><canvas id='cFmt'></canvas></div>
+  </div>
+</div>
+<p class='sec'>Tabla ejecutiva &mdash; todos los productos con desglose de cajas</p>
+<div class='card' style='margin-bottom:22px'>
+  <div class='filters' id='tblF'>
+    <button class='fbtn active' onclick='fTbl("all",this)'>Todas</button>
+    <button class='fbtn' onclick='fTbl("Matacuy",this)'>Matacuy</button>
+    <button class='fbtn' onclick='fTbl("Salqa Azul",this)'>Salqa Azul</button>
+    <button class='fbtn' onclick='fTbl("Salqa Verde",this)'>Salqa Verde</button>
+    <button class='fbtn' onclick='fTbl("A&ntilde;ejo",this)'>A&ntilde;ejo</button>
+    <button class='fbtn' onclick='fTbl("Reposado",this)'>Reposado</button>
+    <button class='fbtn' onclick='fTbl("Cosecha",this)'>Cosecha</button>
+    <button class='fbtn' onclick='fTbl("Botanizado",this)'>Botanizado</button>
+    <button class='fbtn' onclick='fTbl("Licor de Caf&eacute;",this)'>Licor de Caf&eacute;</button>
+  </div>
+  <table><thead><tr>
+    <th>Producto</th><th>L&iacute;nea</th>
+    <th style='text-align:right'>Stock (u.)</th>
+    <th style='text-align:right'>Cajas / Planchas</th>
+    <th style='text-align:right'>Sueltas</th>
+    <th style='text-align:center'>Ud./envase</th>
+    <th style='text-align:center'>Estado</th>
+  </tr></thead><tbody id='tblBody'></tbody></table>
+</div>
+</div>
+<div class='footer'>Destiler&iacute;a Ancopacha &nbsp;&middot;&nbsp; Corte 01/09/2026 &nbsp;&middot;&nbsp; 750ml y 375ml = 6 u/caja &nbsp;&middot;&nbsp; 50ml = 60 u/caja &nbsp;&middot;&nbsp; Matacuy 50ml = 111 u/plancha &nbsp;&middot;&nbsp; Uso interno</div>
+<script>
+var P=[{"desc": "SALQA AZUL 750 ml.", "linea": "Salqa Azul", "upb": 6, "tipo": "caja", "stock": 48, "cajas": 8, "sueltas": 0}, {"desc": "SALQA AZUL 375 ml.", "linea": "Salqa Azul", "upb": 6, "tipo": "caja", "stock": 0, "cajas": 0, "sueltas": 0}, {"desc": "SALQA AZUL 50 ml.", "linea": "Salqa Azul", "upb": 60, "tipo": "caja", "stock": 180, "cajas": 3, "sueltas": 0}, {"desc": "SALQA VERDE 750 ml", "linea": "Salqa Verde", "upb": 6, "tipo": "caja", "stock": 18, "cajas": 3, "sueltas": 0}, {"desc": "SALQA VERDE 375 ml", "linea": "Salqa Verde", "upb": 6, "tipo": "caja", "stock": 6, "cajas": 1, "sueltas": 0}, {"desc": "SALQA VERDE 50 ml", "linea": "Salqa Verde", "upb": 60, "tipo": "caja", "stock": 180, "cajas": 3, "sueltas": 0}, {"desc": "MATACUY 750 ml", "linea": "Matacuy", "upb": 6, "tipo": "caja", "stock": 0, "cajas": 0, "sueltas": 0}, {"desc": "MATACUY 700 ml", "linea": "Matacuy", "upb": 6, "tipo": "caja", "stock": 364, "cajas": 60, "sueltas": 4}, {"desc": "MATACUY 375 ml", "linea": "Matacuy", "upb": 6, "tipo": "caja", "stock": 276, "cajas": 46, "sueltas": 0}, {"desc": "MATACUY 50 ml", "linea": "Matacuy", "upb": 111, "tipo": "plancha", "stock": 1443, "cajas": 13, "sueltas": 0}, {"desc": "SALQA AÑEJO 750 ml", "linea": "Añejo", "upb": 6, "tipo": "caja", "stock": 48, "cajas": 8, "sueltas": 0}, {"desc": "SALQA AÑEJO 375 ml", "linea": "Añejo", "upb": 6, "tipo": "caja", "stock": 48, "cajas": 8, "sueltas": 0}, {"desc": "SALQA AÑEJO 50 ml", "linea": "Añejo", "upb": 60, "tipo": "caja", "stock": 120, "cajas": 2, "sueltas": 0}, {"desc": "SALQA REPOSADO 750 ml", "linea": "Reposado", "upb": 6, "tipo": "caja", "stock": 99, "cajas": 16, "sueltas": 3}, {"desc": "SALQA REPOSADO 375 ml", "linea": "Reposado", "upb": 6, "tipo": "caja", "stock": 174, "cajas": 29, "sueltas": 0}, {"desc": "SALQA REPOSADO 50 ml", "linea": "Reposado", "upb": 60, "tipo": "caja", "stock": 180, "cajas": 3, "sueltas": 0}, {"desc": "COSECHA 750 ml", "linea": "Cosecha", "upb": 6, "tipo": "caja", "stock": 155, "cajas": 25, "sueltas": 5}, {"desc": "COSECHA 375 ml", "linea": "Cosecha", "upb": 6, "tipo": "caja", "stock": 174, "cajas": 29, "sueltas": 0}, {"desc": "COSECHA 50 ml", "linea": "Cosecha", "upb": 60, "tipo": "caja", "stock": 0, "cajas": 0, "sueltas": 0}, {"desc": "BOTANIZADO 750 ml", "linea": "Botanizado", "upb": 6, "tipo": "caja", "stock": 60, "cajas": 10, "sueltas": 0}, {"desc": "BOTANIZADO 375 ml", "linea": "Botanizado", "upb": 6, "tipo": "caja", "stock": 42, "cajas": 7, "sueltas": 0}, {"desc": "BOTANIZADO 50 ml", "linea": "Botanizado", "upb": 60, "tipo": "caja", "stock": 120, "cajas": 2, "sueltas": 0}, {"desc": "LICOR DE CAFÉ 750 ml", "linea": "Licor de Café", "upb": 6, "tipo": "caja", "stock": 204, "cajas": 34, "sueltas": 0}, {"desc": "LICOR DE CAFÉ 375 ml", "linea": "Licor de Café", "upb": 6, "tipo": "caja", "stock": 216, "cajas": 36, "sueltas": 0}, {"desc": "LICOR DE CAFÉ 50 ml", "linea": "Licor de Café", "upb": 60, "tipo": "caja", "stock": 60, "cajas": 1, "sueltas": 0}];
+var TT={"Matacuy": {"750": [{"desc": "MATACUY 750 ml", "stock": 0, "caja": "AGOTADO"}, {"desc": "MATACUY 700 ml", "stock": 364, "caja": "60 cajas + 4 sueltas"}], "375": [{"desc": "MATACUY 375 ml", "stock": 276, "caja": "46 cajas"}], "50": [{"desc": "MATACUY 50 ml", "stock": 1443, "caja": "13 planchas"}]}, "Licor de Café": {"750": [{"desc": "LICOR DE CAFÉ 750 ml", "stock": 204, "caja": "34 cajas"}], "375": [{"desc": "LICOR DE CAFÉ 375 ml", "stock": 216, "caja": "36 cajas"}], "50": [{"desc": "LICOR DE CAFÉ 50 ml", "stock": 60, "caja": "1 caja"}]}, "Añejo": {"750": [{"desc": "SALQA AÑEJO 750 ml", "stock": 48, "caja": "8 cajas"}], "375": [{"desc": "SALQA AÑEJO 375 ml", "stock": 48, "caja": "8 cajas"}], "50": [{"desc": "SALQA AÑEJO 50 ml", "stock": 120, "caja": "2 cajas"}]}, "Reposado": {"750": [{"desc": "SALQA REPOSADO 750 ml", "stock": 99, "caja": "16 cajas + 3 sueltas"}], "375": [{"desc": "SALQA REPOSADO 375 ml", "stock": 174, "caja": "29 cajas"}], "50": [{"desc": "SALQA REPOSADO 50 ml", "stock": 180, "caja": "3 cajas"}]}, "Botanizado": {"750": [{"desc": "BOTANIZADO 750 ml", "stock": 60, "caja": "10 cajas"}], "375": [{"desc": "BOTANIZADO 375 ml", "stock": 42, "caja": "7 cajas"}], "50": [{"desc": "BOTANIZADO 50 ml", "stock": 120, "caja": "2 cajas"}]}, "Salqa Verde": {"750": [{"desc": "SALQA VERDE 750 ml", "stock": 18, "caja": "3 cajas"}], "375": [{"desc": "SALQA VERDE 375 ml", "stock": 6, "caja": "1 caja"}], "50": [{"desc": "SALQA VERDE 50 ml", "stock": 180, "caja": "3 cajas"}]}, "Cosecha": {"750": [{"desc": "COSECHA 750 ml", "stock": 155, "caja": "25 cajas + 5 sueltas"}], "375": [{"desc": "COSECHA 375 ml", "stock": 174, "caja": "29 cajas"}], "50": [{"desc": "COSECHA 50 ml", "stock": 0, "caja": "AGOTADO"}]}, "Salqa Azul": {"750": [{"desc": "SALQA AZUL 750 ml.", "stock": 48, "caja": "8 cajas"}], "375": [{"desc": "SALQA AZUL 375 ml.", "stock": 0, "caja": "AGOTADO"}], "50": [{"desc": "SALQA AZUL 50 ml.", "stock": 180, "caja": "3 cajas"}]}};
+var LC={'Matacuy':'#1A5276','Salqa Azul':'#C0392B','Salqa Verde':'#1E8449','Añejo':'#6C3483','Reposado':'#117A65','Cosecha':'#7D6608','Botanizado':'#A04000','Licor de Café':'#0F6E56'};
+var LN=['Matacuy','Licor de Café','Añejo','Reposado','Botanizado','Salqa Verde','Cosecha','Salqa Azul'];
+Chart.defaults.font.family="'Segoe UI',Arial,sans-serif";
+Chart.defaults.color='#6B7280';
+var dlP={id:'dl',afterDatasetsDraw:function(chart){
+  var ctx=chart.ctx;
+  chart.data.datasets.forEach(function(ds,di){
+    var meta=chart.getDatasetMeta(di);
+    if(meta.hidden)return;
+    meta.data.forEach(function(el,i){
+      var val=ds.data[i];
+      if(!val||val===0||(el.height||0)<10)return;
+      ctx.save();
+      ctx.font='700 10px Segoe UI,Arial';
+      ctx.textAlign='center';ctx.textBaseline='middle';
+      var pos=el.tooltipPosition();
+      ctx.strokeStyle='rgba(0,0,0,0.55)';ctx.lineWidth=3;ctx.lineJoin='round';
+      ctx.strokeText(val,pos.x,pos.y);
+      ctx.fillStyle='#fff';ctx.fillText(val,pos.x,pos.y);
+      ctx.restore();
+    });
+  });
+}};
+Chart.register(dlP);
+function isF750(p){return p.upb===6&&p.desc.indexOf('750')>=0;}
+function isF375(p){return p.upb===6&&p.desc.indexOf('375')>=0;}
+function isF50(p){return p.upb===60||p.upb===111;}
+var stockByL=LN.map(function(l){return P.filter(function(p){return p.linea===l;}).reduce(function(a,p){return a+Math.max(0,p.stock);},0);});
+var totalStock=P.reduce(function(a,p){return a+Math.max(0,p.stock);},0);
+var agotados=P.filter(function(p){return p.stock<=0;});
+var conStk=P.filter(function(p){return p.stock>0;});
+var warnL=P.filter(function(p){return p.stock>0&&p.stock<60;});
+var topIdx=stockByL.indexOf(Math.max.apply(null,stockByL));
+document.getElementById('hTotal').textContent=totalStock.toLocaleString('es-PE');
+document.getElementById('hSKUs').textContent=conStk.length;
+document.getElementById('hCero').textContent=agotados.length;
+document.getElementById('kTotal').textContent=totalStock.toLocaleString('es-PE');
+document.getElementById('kTSub').textContent=conStk.length+' con stock, '+agotados.length+' agotados de '+P.length;
+document.getElementById('kTop').textContent=LN[topIdx];
+document.getElementById('kTopSub').textContent=stockByL[topIdx]+' u. '+Math.round(stockByL[topIdx]/totalStock*100)+'% del total';
+document.getElementById('kWarn').textContent=warnL.length;
+document.getElementById('kAgot').textContent=agotados.length+' / '+P.length;
+var agotLineas=[...new Set(agotados.map(function(p){return p.linea;}))].slice(0,3).join(', ');
+document.getElementById('kAgotSub').textContent=agotLineas;
+document.getElementById('alertBar').innerHTML='<strong>Alertas: '+agotados.length+' SKUs agotados, '+warnL.length+' en alerta</strong>'
+  +'<div class="alert-tags">'
+  +agotados.map(function(p){return '<span class="atag red">'+p.desc+'</span>';}).join('')
+  +warnL.map(function(p){return '<span class="atag amber">'+p.desc+' ('+p.stock+' u.)</span>';}).join('')
+  +'</div>';
+var d750=LN.map(function(l){return P.filter(function(p){return p.linea===l&&isF750(p);}).reduce(function(a,p){return a+Math.max(0,p.stock);},0);});
+var d375=LN.map(function(l){return P.filter(function(p){return p.linea===l&&isF375(p);}).reduce(function(a,p){return a+Math.max(0,p.stock);},0);});
+var d50=LN.map(function(l){return P.filter(function(p){return p.linea===l&&isF50(p);}).reduce(function(a,p){return a+Math.max(0,p.stock);},0);});
+var ttEl=document.getElementById('tt');
+function buildTT(linea,fmtKey,val){
+  var FL={'750':'750 ml','375':'375 ml','50':'50 ml'};
+  var FC={'750':'#5B9BD5','375':'#52B788','50':'#E8A04A'};
+  var items=(TT[linea]&&TT[linea][fmtKey])?TT[linea][fmtKey].filter(function(i){return i.stock>0;})  :[];
+  var h='<div class="tt-title" style="color:'+FC[fmtKey]+'">'+linea+' &mdash; '+FL[fmtKey]+'</div>';
+  if(!items.length){h+='<div class="tt-row"><span class="tt-lbl">Sin stock</span></div>';return h;}
+  items.forEach(function(item){
+    h+='<div class="tt-row"><span class="tt-lbl">Unidades</span><span class="tt-val">'+item.stock+' u.</span></div>';
+    h+='<div class="tt-row"><span class="tt-lbl">En cajas</span><span class="tt-val" style="color:#FFD66B">'+item.caja+'</span></div>';
+  });
+  return h;
+}
+function posTT(e){
+  var w=ttEl.offsetWidth,h=ttEl.offsetHeight,vw=window.innerWidth,vh=window.innerHeight;
+  ttEl.style.left=(e.clientX+16+w>vw?e.clientX-w-8:e.clientX+16)+'px';
+  ttEl.style.top=(e.clientY+h+8>vh?e.clientY-h-8:e.clientY+8)+'px';
+}
+var chartMain=new Chart(document.getElementById('cMain'),{
+  type:'bar',
+  data:{labels:LN,datasets:[
+    {label:'750 ml',data:d750,backgroundColor:'#1A5276',borderWidth:0,fmtKey:'750'},
+    {label:'375 ml',data:d375,backgroundColor:'#117A65',borderWidth:0,fmtKey:'375'},
+    {label:'50 ml', data:d50, backgroundColor:'#D4811A',borderWidth:0,fmtKey:'50'}
+  ]},
+  options:{
+    responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{position:'top',labels:{font:{size:11},boxWidth:12}},tooltip:{enabled:false}},
+    scales:{
+      x:{stacked:true,grid:{display:false},ticks:{font:{size:11}}},
+      y:{stacked:true,grid:{color:'rgba(0,0,0,.05)'},ticks:{font:{size:10}}}
+    }
+  },
+  plugins:[dlP]
+});
+var cEl=document.getElementById('cMain');
+cEl.addEventListener('mousemove',function(e){
+  var pts=chartMain.getElementsAtEventForMode(e,'nearest',{intersect:true},false);
+  if(pts.length){
+    var di=pts[0].datasetIndex,idx=pts[0].index;
+    var ds=chartMain.data.datasets[di];
+    ttEl.innerHTML=buildTT(LN[idx],ds.fmtKey,ds.data[idx]);
+    ttEl.style.display='block';posTT(e);
+  }else ttEl.style.display='none';
+});
+cEl.addEventListener('mouseleave',function(){ttEl.style.display='none';});
+var cajasGrid=document.getElementById('cajasGrid');
+LN.forEach(function(l){
+  var items=P.filter(function(p){return p.linea===l;});
+  if(!items.length)return;
+  var div=document.createElement('div');div.className='caja-card';
+  var rows='<div class="caja-linea" style="color:'+LC[l]+'">'+l+'</div>';
+  items.forEach(function(p){
+    var lbl=p.desc.replace('SALQA ','');
+    var val=p.stock<=0
+      ?'<span style="color:#C0392B">AGOTADO</span>'
+      :'<span style="color:#1B4332">'+p.stock+' u. = '+p.cajas+' '+p.tipo+(p.cajas!==1?'s':'')+(p.sueltas>0?' + '+p.sueltas+' sueltas':'')+'</span>';
+    rows+='<div class="caja-row"><span>'+lbl+'</span>'+val+'</div>';
+  });
+  div.innerHTML=rows;cajasGrid.appendChild(div);
+});
+function buildDonut(cId,lId,filterFn){
+  var entries=LN.map(function(l){return{l:l,s:P.filter(function(p){return p.linea===l&&filterFn(p);}).reduce(function(a,p){return a+Math.max(0,p.stock);},0)};}).filter(function(e){return e.s>0;});
+  var labels=entries.map(function(e){return e.l;});
+  var vals=entries.map(function(e){return e.s;});
+  var colors=entries.map(function(e){return LC[e.l];});
+  var tot=vals.reduce(function(a,b){return a+b;},0);
+  new Chart(document.getElementById(cId),{
+    type:'doughnut',
+    data:{labels:labels,datasets:[{data:vals,backgroundColor:colors,borderWidth:3,borderColor:'#fff'}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'55%',
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:function(ctx){return ' '+ctx.label+': '+ctx.raw+' u. ('+Math.round(ctx.raw/tot*100)+'%)';}}}}},
+    plugins:[{id:'p_'+cId,afterDatasetsDraw:function(chart){
+      var ctx=chart.ctx;
+      chart.getDatasetMeta(0).data.forEach(function(arc,i){
+        var mid=arc.startAngle+(arc.endAngle-arc.startAngle)/2;
+        var r=(arc.outerRadius+arc.innerRadius)/2;
+        var x=arc.x+Math.cos(mid)*r,y=arc.y+Math.sin(mid)*r;
+        var pct=Math.round(vals[i]/tot*100);if(pct<6)return;
+        ctx.save();
+        ctx.strokeStyle='rgba(0,0,0,0.45)';ctx.lineWidth=3;ctx.lineJoin='round';
+        ctx.font='700 10px Segoe UI,Arial';ctx.textAlign='center';ctx.textBaseline='middle';
+        ctx.strokeText(pct+'%',x,y);ctx.fillStyle='#fff';ctx.fillText(pct+'%',x,y);ctx.restore();
+      });
+    }}]
+  });
+  var leg=document.getElementById(lId);
+  entries.forEach(function(e,i){
+    var pct=Math.round(e.s/tot*100);
+    leg.innerHTML+='<span><span class="lsq" style="background:'+colors[i]+'"></span>'+e.l+' &mdash; '+e.s+' u. ('+pct+'%)</span>';
+  });
+}
+buildDonut('cD750','leg750',isF750);
+buildDonut('cD375','leg375',isF375);
+var ft750=d750.reduce(function(a,b){return a+b;},0);
+var ft375=d375.reduce(function(a,b){return a+b;},0);
+var ft50=d50.reduce(function(a,b){return a+b;},0);
+new Chart(document.getElementById('cFmt'),{
+  type:'doughnut',
+  data:{labels:['750 ml','375 ml','50 ml'],datasets:[{data:[ft750,ft375,ft50],backgroundColor:['#1A5276','#117A65','#D4811A'],borderWidth:3,borderColor:'#fff'}]},
+  options:{responsive:true,maintainAspectRatio:false,cutout:'50%',
+    plugins:{legend:{position:'right',labels:{font:{size:10},boxWidth:10}},tooltip:{callbacks:{label:function(ctx){return ' '+ctx.label+': '+ctx.raw+' u.';}}}  }},
+  plugins:[{id:'pFmt',afterDatasetsDraw:function(chart){
+    var ctx=chart.ctx;var vals=[ft750,ft375,ft50];var tot=vals.reduce(function(a,b){return a+b;},0);
+    chart.getDatasetMeta(0).data.forEach(function(arc,i){
+      var mid=arc.startAngle+(arc.endAngle-arc.startAngle)/2;
+      var r=(arc.outerRadius+arc.innerRadius)/2;
+      var x=arc.x+Math.cos(mid)*r,y=arc.y+Math.sin(mid)*r;
+      var pct=Math.round(vals[i]/tot*100);if(pct<6)return;
+      ctx.save();ctx.strokeStyle='rgba(0,0,0,0.45)';ctx.lineWidth=3;ctx.lineJoin='round';
+      ctx.font='700 10px Segoe UI,Arial';ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.strokeText(pct+'%',x,y);ctx.fillStyle='#fff';ctx.fillText(pct+'%',x,y);ctx.restore();
+    });
+  }}]
+});
+var maxS=Math.max.apply(null,P.map(function(p){return Math.max(0,p.stock);}));
+function semCol(s){return s<=0?'#C0392B':s<60?'#D4811A':'#27AE60';}
+function renderSem(f){
+  var c=document.getElementById('semC');c.innerHTML='';
+  var list=P.filter(function(p){return f==='all'||p.linea===f;}).sort(function(a,b){return b.stock-a.stock;});
+  list.forEach(function(p){
+    var col=semCol(p.stock);
+    var pct=maxS>0?Math.max(2,Math.round(p.stock/maxS*100)):2;
+    var caja=p.stock>0?p.cajas+' '+p.tipo+(p.cajas!==1?'s':'')+(p.sueltas>0?' + '+p.sueltas+' sueltas':''):'AGOTADO';
+    var row=document.createElement('div');row.className='sem-row';
+    row.innerHTML='<div class="sem-label" title="'+p.desc+'">'+p.desc+'</div>'
+      +'<div class="sem-bar-wrap"><div class="sem-bar" style="width:'+pct+'%;background:'+col+'"><span class="sem-val">'+(p.stock>0?p.stock:'')+'</span></div></div>'
+      +'<div class="sem-extra" style="color:'+col+'">'+caja+'</div>';
+    c.appendChild(row);
+  });
+}
+renderSem('all');
+function fSem(f,btn){document.querySelectorAll('#semF .fbtn').forEach(function(b){b.classList.remove('active');});btn.classList.add('active');renderSem(f);}
+function renderTbl(f){
+  var tbody=document.getElementById('tblBody');tbody.innerHTML='';
+  P.filter(function(p){return f==='all'||p.linea===f;}).forEach(function(p){
+    var st='p-ok',stl='En stock';
+    if(p.stock<=0){st='p-danger';stl='Agotado';}
+    else if(p.stock<60){st='p-warn';stl='Alerta';}
+    var cj=p.stock>0?p.cajas+' '+p.tipo+(p.cajas!==1?'s':''):'&mdash;';
+    tbody.innerHTML+='<tr>'
+      +'<td style="font-weight:500">'+p.desc+'</td>'
+      +'<td><span style="font-size:10px;color:'+(LC[p.linea]||'#555')+';font-weight:600">'+p.linea+'</span></td>'
+      +'<td style="text-align:right;font-weight:700;color:'+(p.stock>0?'#1A2E1A':'#C0392B')+'">'+p.stock+'</td>'
+      +'<td style="text-align:right;color:#2D6A4F;font-weight:600">'+cj+'</td>'
+      +'<td style="text-align:right">'+(p.stock>0?p.sueltas:'&mdash;')+'</td>'
+      +'<td style="text-align:center;color:#9CA3AF">'+p.upb+(p.tipo==='plancha'?' u/plancha':' u/caja')+'</td>'
+      +'<td style="text-align:center"><span class="pill '+st+'">'+stl+'</span></td>'
+      +'</tr>';
+  });
+}
+renderTbl('all');
+function fTbl(f,btn){document.querySelectorAll('#tblF .fbtn').forEach(function(b){b.classList.remove('active');});btn.classList.add('active');renderTbl(f);}
+
+// ── SALIDAS ───────────────────────────────────────────────────────────
+var SAL = {"por_destino": {"ALMACEN LIMA": {"total": 1668, "lineas": {"Matacuy": 1068, "Salqa Azul": 180, "Licor de Café": 300, "Botanizado": 120}}, "EXPORTACION": {"total": 1020, "lineas": {"Matacuy": 756, "Añejo": 132, "Salqa Verde": 132}}, "TIENDA PACHAR": {"total": 488, "lineas": {"Cosecha": 138, "Licor de Café": 122, "Matacuy": 42, "Añejo": 36, "Botanizado": 30, "Salqa Azul": 60, "Salqa Verde": 60}}, "TAMBO DEL INCA": {"total": 316, "lineas": {"Añejo": 132, "Licor de Café": 72, "Matacuy": 111, "Salqa Azul": 1}}, "ALMACEN CUSCO": {"total": 312, "lineas": {"Matacuy": 156, "Salqa Azul": 96, "Cosecha": 60}}, "EL ALBERGUE": {"total": 292, "lineas": {"Reposado": 6, "Matacuy": 60, "Salqa Azul": 14, "Cosecha": 61, "Añejo": 2, "Salqa Verde": 9, "Licor de Café": 80, "Botanizado": 60}}, "HERBARIO": {"total": 264, "lineas": {"Matacuy": 108, "Añejo": 60, "Salqa Azul": 18, "Cosecha": 60, "Botanizado": 18}}, "TIENDA CHUNCHO": {"total": 150, "lineas": {"Cosecha": 60, "Matacuy": 30, "Añejo": 60}}}, "por_linea": {"Matacuy": 2331, "Licor de Café": 574, "Añejo": 422, "Reposado": 6, "Botanizado": 228, "Salqa Verde": 201, "Cosecha": 379, "Salqa Azul": 369}, "total": 4510, "periodo": "04 ago – 01 sep 2026"};
+var destColors={'ALMACEN LIMA':'#1A5276','EXPORTACION':'#C0392B','ALMACEN CUSCO':'#117A65',
+  'TIENDA PACHAR':'#D4811A','TAMBO DEL INCA':'#6C3483','TIENDA CHUNCHO':'#7D6608','EL ALBERGUE':'#2E86C1'};
+var lcSalMap={'Matacuy':'#024A00','Salqa Azul':'#0B3D6B','Salqa Verde':'#1E8449',
+  'Añejo':'#622211','Reposado':'#117A65','Cosecha':'#7D6608','Botanizado':'#009124','Licor de Café':'#422302'};
+
+document.getElementById('sTotalNum').textContent = SAL.total.toLocaleString('es-PE');
+var destinos=Object.keys(SAL.por_destino);
+var destVals=destinos.map(function(d){return SAL.por_destino[d].total;});
+var destCols=destinos.map(function(d){return destColors[d]||'#9CA3AF';});
+var maxDest=Math.max.apply(null,destVals);
+
+var kpiEl=document.getElementById('sDestKpis');
+destinos.forEach(function(d,i){
+  var pct=Math.round(destVals[i]/SAL.total*100);
+  var bw=Math.round(destVals[i]/maxDest*100);
+  var row=document.createElement('div');row.style.cssText='display:flex;align-items:center;gap:6px';
+  row.innerHTML='<div style="font-size:9px;font-weight:600;min-width:110px;color:#374151;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+d+'</div>'
+    +'<div style="flex:1;background:#F0F4F0;border-radius:3px;height:12px;overflow:hidden">'
+    +'<div style="width:'+bw+'%;height:100%;background:'+destCols[i]+';border-radius:3px"></div></div>'
+    +'<div style="font-size:9px;font-weight:700;color:#374151;min-width:28px;text-align:right">'+pct+'%</div>'
+    +'<div style="font-size:9px;color:#9CA3AF;min-width:34px;text-align:right">'+destVals[i]+'u</div>';
+  kpiEl.appendChild(row);
+});
+
+new Chart(document.getElementById('cSalidaDest'),{
+  type:'doughnut',
+  data:{labels:destinos,datasets:[{data:destVals,backgroundColor:destCols,borderWidth:3,borderColor:'#fff'}]},
+  options:{responsive:true,maintainAspectRatio:false,cutout:'58%',
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:function(ctx){
+      return ' '+ctx.label+': '+ctx.raw+' u ('+Math.round(ctx.raw/SAL.total*100)+'%)';}}}  }},
+  plugins:[{id:'pctD',afterDatasetsDraw:function(chart){
+    var ctx=chart.ctx;
+    chart.getDatasetMeta(0).data.forEach(function(arc,i){
+      var pct=Math.round(destVals[i]/SAL.total*100);if(pct<5)return;
+      var mid=arc.startAngle+(arc.endAngle-arc.startAngle)/2;
+      var r=(arc.outerRadius+arc.innerRadius)/2;
+      var x=arc.x+Math.cos(mid)*r,y=arc.y+Math.sin(mid)*r;
+      ctx.save();ctx.strokeStyle='rgba(0,0,0,0.5)';ctx.lineWidth=3;ctx.lineJoin='round';
+      ctx.font='700 10px Segoe UI,Arial';ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.strokeText(pct+'%',x,y);ctx.fillStyle='#fff';ctx.fillText(pct+'%',x,y);ctx.restore();
+    });
+  }}]
+});
+
+var legEl=document.getElementById('sDestLeg');
+destinos.forEach(function(d,i){
+  var pct=Math.round(destVals[i]/SAL.total*100);
+  var sp=document.createElement('span');sp.style.cssText='display:flex;align-items:center;gap:3px;font-size:9px;color:#6B7280';
+  sp.innerHTML='<span style="width:8px;height:8px;border-radius:2px;flex-shrink:0;background:'+destCols[i]+';display:inline-block"></span>'+d+' '+pct+'%';
+  legEl.appendChild(sp);
+});
+
+var salPairs=Object.keys(SAL.por_linea).map(function(l){return{l:l,v:SAL.por_linea[l]};}).sort(function(a,b){return b.v-a.v;});
+new Chart(document.getElementById('cSalidaLinea'),{
+  type:'bar',
+  data:{labels:salPairs.map(function(p){return p.l;}),datasets:[{
+    data:salPairs.map(function(p){return p.v;}),
+    backgroundColor:salPairs.map(function(p){return lcSalMap[p.l]||'#9CA3AF';}),borderWidth:0}]},
+  options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:function(ctx){return ' '+ctx.raw+' unidades';}}}},
+    scales:{x:{grid:{color:'rgba(0,0,0,.05)'},ticks:{font:{size:10}}},y:{grid:{display:false},ticks:{font:{size:10}}}}}
+});
+
+// ── COVERAGE ──────────────────────────────────────────────────────────
+var COV = {"Matacuy": {"stock": 2083, "salidas_periodo": 2331, "weekly_rate": 582.8, "weeks": 3.6}, "Licor de Café": {"stock": 480, "salidas_periodo": 574, "weekly_rate": 143.5, "weeks": 3.3}, "Añejo": {"stock": 216, "salidas_periodo": 422, "weekly_rate": 105.5, "weeks": 2.0}, "Reposado": {"stock": 453, "salidas_periodo": 6, "weekly_rate": 1.5, "weeks": 302.0}, "Botanizado": {"stock": 222, "salidas_periodo": 228, "weekly_rate": 57.0, "weeks": 3.9}, "Salqa Verde": {"stock": 204, "salidas_periodo": 201, "weekly_rate": 50.2, "weeks": 4.1}, "Cosecha": {"stock": 329, "salidas_periodo": 379, "weekly_rate": 94.8, "weeks": 3.5}, "Salqa Azul": {"stock": 228, "salidas_periodo": 369, "weekly_rate": 92.2, "weeks": 2.5}};
+var LN_ORD=['Matacuy','Salqa Azul','Licor de Café','Añejo','Salqa Verde','Cosecha','Botanizado','Reposado'];
+function covCol(w){if(w===null)return'#9CA3AF';if(w<2)return'#C0392B';if(w<4)return'#D4811A';return'#27AE60';}
+function covLbl(w){if(w===null)return'Sin salidas';if(w<2)return'CRITICO';if(w<4)return'ALERTA';return'OK';}
+
+var covSorted=LN_ORD.slice().sort(function(a,b){
+  var wa=COV[a]?COV[a].weeks:null,wb=COV[b]?COV[b].weeks:null;
+  if(wa===null&&wb===null)return 0;if(wa===null)return 1;if(wb===null)return -1;return wa-wb;
+});
+var covEl=document.getElementById('coverageRows');
+var maxRate=Math.max.apply(null,LN_ORD.map(function(l){return COV[l]?COV[l].weekly_rate:0;}));
+LN_ORD.forEach(function(l){
+  var c=COV[l];if(!c)return;
+  var col=covCol(c.weeks);
+  var wTxt=c.weeks!==null?c.weeks+' sem':'Sin salidas';
+  var bw=maxRate>0?Math.round(c.weekly_rate/maxRate*100):0;
+  var row=document.createElement('div');row.style.cssText='display:flex;align-items:center;gap:8px;margin-bottom:8px';
+  row.innerHTML='<div style="font-size:10px;font-weight:600;min-width:120px;color:#374151">'+l+'</div>'
+    +'<div style="flex:1;background:#F0F4F0;border-radius:4px;height:18px;overflow:hidden">'
+    +'<div style="width:'+bw+'%;height:100%;background:'+col+';border-radius:4px;display:flex;align-items:center;padding-left:6px">'
+    +'<span style="font-size:9px;font-weight:700;color:#fff;white-space:nowrap">'+c.weekly_rate.toFixed(0)+' u/sem</span></div></div>'
+    +'<div style="font-size:11px;font-weight:700;color:'+col+';min-width:70px;text-align:right">'+wTxt+'</div>';
+  covEl.appendChild(row);
+});
+
+var tBody=document.getElementById('alertTBody');
+covSorted.forEach(function(l){
+  var c=COV[l];if(!c)return;
+  var col=covCol(c.weeks);var lbl=covLbl(c.weeks);
+  var wTxt=c.weeks!==null?c.weeks+' sem':'--';
+  var pillBg=c.weeks===null?'#F3F4F6':c.weeks<2?'#FEE2E2':c.weeks<4?'#FEF3C7':'#D1FAE5';
+  var pillCol=c.weeks===null?'#6B7280':c.weeks<2?'#991B1B':c.weeks<4?'#92400E':'#065F46';
+  var tr=document.createElement('tr');
+  tr.innerHTML='<td style="padding:6px 8px;border-bottom:1px solid #F0F4F0;font-weight:600;color:#374151">'+l+'</td>'
+    +'<td style="padding:6px 8px;border-bottom:1px solid #F0F4F0;text-align:right">'+c.stock.toLocaleString('es-PE')+' u.</td>'
+    +'<td style="padding:6px 8px;border-bottom:1px solid #F0F4F0;text-align:right;color:#6B7280">'+c.weekly_rate.toFixed(0)+' u/sem</td>'
+    +'<td style="padding:6px 8px;border-bottom:1px solid #F0F4F0;text-align:right;font-weight:700;color:'+col+'">'+wTxt+'</td>'
+    +'<td style="padding:6px 8px;border-bottom:1px solid #F0F4F0;text-align:center">'
+    +'<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:'+pillBg+';color:'+pillCol+'">'+lbl+'</span></td>';
+  tBody.appendChild(tr);
+});
+
+</script>
+</body></html>

@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang='es'>
+<head>
+<meta charset='UTF-8'>
+<meta name='viewport' content='width=device-width,initial-scale=1'>
+<title>Comparativa Semanal Jun22 vs Jun29</title>
+<script src='https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js'></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#FBF3EC;color:#2E1F14;font-size:13px}
+.hdr{background:linear-gradient(135deg,#7A3B12,#A0501A,#C9702E);color:#fff;padding:20px 36px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}
+.hdr h1{font-size:19px;font-weight:700}.hdr p{font-size:11px;opacity:.75;margin-top:2px}
+.badges{display:flex;gap:10px;flex-wrap:wrap}
+.badge{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);border-radius:8px;padding:7px 14px;text-align:center;min-width:90px}
+.badge strong{display:block;font-size:18px;font-weight:700;line-height:1.1}
+.badge span{font-size:10px;opacity:.8;text-transform:uppercase;letter-spacing:.04em}
+.badge.up{background:rgba(120,200,120,.25)}.badge.down{background:rgba(220,90,60,.3)}.badge.neu{background:rgba(255,255,255,.15)}
+.wrap{padding:22px 36px 36px;max-width:1440px;margin:0 auto}
+.sec{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:#A0501A;border-left:3px solid #A0501A;padding-left:8px;margin:0 0 13px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px}
+.card{background:#fff;border-radius:10px;padding:16px 18px;box-shadow:0 1px 4px rgba(122,59,18,.10)}
+.card-t{font-size:11px;font-weight:600;color:#5C4332;margin-bottom:10px}
+.kgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
+.kpi{background:#fff;border-radius:10px;padding:13px 15px;border-top:4px solid #A0501A;box-shadow:0 1px 4px rgba(122,59,18,.10)}
+.kpi.red{border-top-color:#C0392B}.kpi.amb{border-top-color:#D4811A}.kpi.blu{border-top-color:#7A3B12}.kpi.grn{border-top-color:#5E8C4A}
+.kl{font-size:9px;text-transform:uppercase;letter-spacing:.07em;color:#8A6F5C;margin-bottom:3px}
+.kv{font-size:22px;font-weight:700;line-height:1;color:#2E1F14}
+.kv.red{color:#C0392B}.kv.grn{color:#3F6B2C}.kv.amb{color:#A0501A}
+.kd{font-size:10px;margin-top:3px;color:#A6927F}
+.leg{display:flex;flex-wrap:wrap;gap:9px;margin-bottom:9px}
+.leg span{display:flex;align-items:center;gap:4px;font-size:10px;color:#6B5645}
+.lsq{width:9px;height:9px;border-radius:2px;flex-shrink:0}
+.filters{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:12px}
+.fbtn{background:#F5EBE0;border:1px solid #E8D5C0;border-radius:20px;padding:4px 11px;font-size:11px;cursor:pointer;transition:all .2s;color:#5C4332;font-family:inherit}
+.fbtn:hover,.fbtn.active{background:#A0501A;color:#fff;border-color:#A0501A}
+table{width:100%;border-collapse:collapse;font-size:11px}
+thead th{background:#FBF3EC;padding:6px 8px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#8A5A33;border-bottom:1px solid #EAD9C5}
+tbody td{padding:6px 8px;border-bottom:1px solid #F5EBE0;vertical-align:middle}
+tbody tr:hover td{background:#FBF3EC}
+tbody tr:last-child td{border-bottom:none}
+.pill{display:inline-flex;font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px}
+.p-up{background:#E3F0DC;color:#3F6B2C}.p-down{background:#FBE2DC;color:#A33A24}.p-neu{background:#F0E6DA;color:#8A6F5C}
+#tt{position:fixed;background:#2E1F14;color:#fff;border-radius:10px;padding:12px 16px;font-size:11px;pointer-events:none;z-index:9999;min-width:200px;max-width:280px;box-shadow:0 4px 20px rgba(0,0,0,.3);display:none}
+.tt-title{font-size:12px;font-weight:700;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid rgba(255,255,255,.2)}
+.tt-row{display:flex;justify-content:space-between;gap:10px;margin-bottom:3px}
+.tt-lbl{color:rgba(255,255,255,.65)}.tt-val{font-weight:700}
+.footer{text-align:center;padding:12px;font-size:10px;color:#A6927F;border-top:1px solid #EAD9C5;margin-top:6px}
+</style>
+</head>
+<body>
+<div id='tt'></div>
+<div class='hdr'>
+  <div>
+    <h1>Comparativa Semanal de Stock</h1>
+    <p>Destiler&iacute;a Ancopacha &nbsp;&middot;&nbsp; 25 de agosto &rarr; 01 de setiembre 2026 &nbsp;&middot;&nbsp; Movimiento de inventario por l&iacute;nea y formato</p>
+  </div>
+  <div class='badges'>
+    <div class='badge neu'><strong id='hT22'>-</strong><span>Stock Ago 25</span></div>
+    <div class='badge neu'><strong id='hT29'>-</strong><span>Stock Sep 01</span></div>
+    <div class='badge' id='hDeltaBadge'><strong id='hDelta'>-</strong><span>Variaci&oacute;n neta</span></div>
+  </div>
+</div>
+<div class='wrap'>
+<div class='kgrid' style='padding-top:4px'>
+  <div class='kpi grn'><div class='kl'>Mayor incremento</div><div class='kv grn' id='kUp'>-</div><div class='kd' id='kUpSub'>-</div></div>
+  <div class='kpi red'><div class='kl'>Mayor ca&iacute;da</div><div class='kv red' id='kDown'>-</div><div class='kd' id='kDownSub'>-</div></div>
+  <div class='kpi amb'><div class='kl'>L&iacute;neas en movimiento</div><div class='kv amb' id='kMoved'>-</div><div class='kd'>De 8 l&iacute;neas totales</div></div>
+  <div class='kpi blu'><div class='kl'>L&iacute;neas estables</div><div class='kv' style='color:#7A3B12' id='kStable'>-</div><div class='kd'>Sin cambio neto</div></div>
+</div>
+<p class='sec'>Comparaci&oacute;n de stock por l&iacute;nea &mdash; 22 Jun vs 29 Jun (barras agrupadas)</p>
+<div class='card' style='margin-bottom:18px'>
+  <div class='card-t'>Unidades totales por l&iacute;nea, semana anterior vs semana actual &middot; L&iacute;nea punteada = tendencia del total general</div>
+  <div class='leg'>
+    <span><span class='lsq' style='background:#8FC1E8'></span>Ago 25 (semana anterior)</span>
+    <span><span class='lsq' style='background:#0B3D6B'></span>Sep 01 (esta semana)</span>
+  </div>
+  <div style='position:relative;width:100%;height:360px'><canvas id='cCompLinea'></canvas></div>
+</div>
+<p class='sec'>Variaci&oacute;n por presentaci&oacute;n &mdash; l&iacute;neas con movimiento (Matacuy, Licor de Caf&eacute;, A&ntilde;ejo, Botanizado)</p>
+<div class='card' style='margin-bottom:18px'>
+  <div class='card-t'>Stock por formato (750ml / 700ml export. / 375ml / 50ml), Jun 22 vs Jun 29 &middot; Solo l&iacute;neas que variaron</div>
+  <div class='filters' id='lineFilters'>
+    <button class='fbtn active' onclick="selectLine('Matacuy',this)">Matacuy</button>
+    <button class='fbtn' onclick="selectLine('Licor de Café',this)">Licor de Caf&eacute;</button>
+    <button class='fbtn' onclick="selectLine('Cosecha',this)">Cosecha</button>
+    <button class='fbtn' onclick="selectLine('Salqa Azul',this)">Salqa Azul</button>
+  </div>
+  <div class='leg'>
+    <span><span class='lsq' id='legSwatch22' style='background:#4FC150'></span>Sep 01</span>
+    <span><span class='lsq' id='legSwatch29' style='background:#035B01'></span>Sep 01</span>
+  </div>
+  <div style='position:relative;width:100%;height:280px'><canvas id='cFormatDetail'></canvas></div>
+</div>
+<p class='sec'>Tabla detallada de variaci&oacute;n por producto</p>
+<div class='card' style='margin-bottom:22px'>
+  <div class='filters' id='tblF'>
+    <button class='fbtn active' onclick='fTbl("all",this)'>Todas</button>
+    <button class='fbtn' onclick='fTbl("up",this)'>Solo incrementos</button>
+    <button class='fbtn' onclick='fTbl("down",this)'>Solo ca&iacute;das</button>
+    <button class='fbtn' onclick='fTbl("same",this)'>Sin cambio</button>
+  </div>
+  <table><thead><tr>
+    <th>Producto</th><th>L&iacute;nea</th>
+    <th style='text-align:right'>Sep 01</th>
+    <th style='text-align:right'>Sep 01</th>
+    <th style='text-align:right'>Variaci&oacute;n</th>
+    <th style='text-align:center'>Tendencia</th>
+  </tr></thead><tbody id='tblBody'></tbody></table>
+</div>
+</div>
+<div class='footer'>Destiler&iacute;a Ancopacha &nbsp;&middot;&nbsp; Comparativa semanal de inventario &nbsp;&middot;&nbsp; Cortes: 25/08/2026 y 01/09/2026 &nbsp;&middot;&nbsp; Uso interno</div>
+<script>
+var C=[{"desc": "SALQA AZUL 750 ml.", "linea": "Salqa Azul", "upb": 6, "tipo": "caja", "stock22": 0, "stock29": 48, "delta": 48}, {"desc": "SALQA AZUL 375 ml.", "linea": "Salqa Azul", "upb": 6, "tipo": "caja", "stock22": 0, "stock29": 0, "delta": 0}, {"desc": "SALQA AZUL 50 ml.", "linea": "Salqa Azul", "upb": 60, "tipo": "caja", "stock22": 180, "stock29": 180, "delta": 0}, {"desc": "SALQA VERDE 750 ml", "linea": "Salqa Verde", "upb": 6, "tipo": "caja", "stock22": 18, "stock29": 18, "delta": 0}, {"desc": "SALQA VERDE 375 ml", "linea": "Salqa Verde", "upb": 6, "tipo": "caja", "stock22": 6, "stock29": 6, "delta": 0}, {"desc": "SALQA VERDE 50 ml", "linea": "Salqa Verde", "upb": 60, "tipo": "caja", "stock22": 180, "stock29": 180, "delta": 0}, {"desc": "MATACUY 750 ml", "linea": "Matacuy", "upb": 6, "tipo": "caja", "stock22": 24, "stock29": 0, "delta": -24}, {"desc": "MATACUY 700 ml", "linea": "Matacuy", "upb": 6, "tipo": "caja", "stock22": 360, "stock29": 364, "delta": 4}, {"desc": "MATACUY 375 ml", "linea": "Matacuy", "upb": 6, "tipo": "caja", "stock22": 336, "stock29": 276, "delta": -60}, {"desc": "MATACUY 50 ml", "linea": "Matacuy", "upb": 111, "tipo": "plancha", "stock22": 0, "stock29": 1443, "delta": 1443}, {"desc": "SALQA AÑEJO 750 ml", "linea": "Añejo", "upb": 6, "tipo": "caja", "stock22": 48, "stock29": 48, "delta": 0}, {"desc": "SALQA AÑEJO 375 ml", "linea": "Añejo", "upb": 6, "tipo": "caja", "stock22": 48, "stock29": 48, "delta": 0}, {"desc": "SALQA AÑEJO 50 ml", "linea": "Añejo", "upb": 60, "tipo": "caja", "stock22": 120, "stock29": 120, "delta": 0}, {"desc": "SALQA REPOSADO 750 ml", "linea": "Reposado", "upb": 6, "tipo": "caja", "stock22": 99, "stock29": 99, "delta": 0}, {"desc": "SALQA REPOSADO 375 ml", "linea": "Reposado", "upb": 6, "tipo": "caja", "stock22": 174, "stock29": 174, "delta": 0}, {"desc": "SALQA REPOSADO 50 ml", "linea": "Reposado", "upb": 60, "tipo": "caja", "stock22": 180, "stock29": 180, "delta": 0}, {"desc": "COSECHA 750 ml", "linea": "Cosecha", "upb": 6, "tipo": "caja", "stock22": 215, "stock29": 155, "delta": -60}, {"desc": "COSECHA 375 ml", "linea": "Cosecha", "upb": 6, "tipo": "caja", "stock22": 174, "stock29": 174, "delta": 0}, {"desc": "COSECHA 50 ml", "linea": "Cosecha", "upb": 60, "tipo": "caja", "stock22": 0, "stock29": 0, "delta": 0}, {"desc": "BOTANIZADO 750 ml", "linea": "Botanizado", "upb": 6, "tipo": "caja", "stock22": 60, "stock29": 60, "delta": 0}, {"desc": "BOTANIZADO 375 ml", "linea": "Botanizado", "upb": 6, "tipo": "caja", "stock22": 42, "stock29": 42, "delta": 0}, {"desc": "BOTANIZADO 50 ml", "linea": "Botanizado", "upb": 60, "tipo": "caja", "stock22": 120, "stock29": 120, "delta": 0}, {"desc": "LICOR DE CAFÉ 750 ml", "linea": "Licor de Café", "upb": 6, "tipo": "caja", "stock22": 204, "stock29": 204, "delta": 0}, {"desc": "LICOR DE CAFÉ 375 ml", "linea": "Licor de Café", "upb": 6, "tipo": "caja", "stock22": 216, "stock29": 216, "delta": 0}, {"desc": "LICOR DE CAFÉ 50 ml", "linea": "Licor de Café", "upb": 60, "tipo": "caja", "stock22": 93, "stock29": 60, "delta": -33}];
+var CD={"lines": ["Matacuy", "Licor de Café", "Cosecha", "Salqa Azul"], "detail": {"Matacuy": {"750": [24, 0], "700": [360, 364], "375": [336, 276], "50": [0, 1443]}, "Licor de Café": {"750": [204, 204], "700": [0, 0], "375": [216, 216], "50": [93, 60]}, "Cosecha": {"750": [215, 155], "700": [0, 0], "375": [174, 174], "50": [0, 0]}, "Salqa Azul": {"750": [0, 48], "700": [0, 0], "375": [0, 0], "50": [180, 180]}}};
+var ALL_DETAIL={"Matacuy": {"750": [24, 0], "700": [360, 364], "375": [336, 276], "50": [0, 1443]}, "Licor de Café": {"750": [204, 204], "700": [0, 0], "375": [216, 216], "50": [93, 60]}, "Añejo": {"750": [48, 48], "700": [0, 0], "375": [48, 48], "50": [120, 120]}, "Reposado": {"750": [99, 99], "700": [0, 0], "375": [174, 174], "50": [180, 180]}, "Botanizado": {"750": [60, 60], "700": [0, 0], "375": [42, 42], "50": [120, 120]}, "Salqa Verde": {"750": [18, 18], "700": [0, 0], "375": [6, 6], "50": [180, 180]}, "Cosecha": {"750": [215, 155], "700": [0, 0], "375": [174, 174], "50": [0, 0]}, "Salqa Azul": {"750": [0, 48], "700": [0, 0], "375": [0, 0], "50": [180, 180]}};
+var LC={'Matacuy':'#A0501A','Salqa Azul':'#C0392B','Salqa Verde':'#5E8C4A','Añejo':'#8B5E2E','Reposado':'#B86B2C','Cosecha':'#946846','Botanizado':'#C9702E','Licor de Café':'#7A3B12'};
+var LN=['Matacuy','Licor de Café','Añejo','Reposado','Botanizado','Salqa Verde','Cosecha','Salqa Azul'];
+Chart.defaults.font.family="'Segoe UI',Arial,sans-serif";
+Chart.defaults.color='#8A6F5C';
+var dlP={id:'dl',afterDatasetsDraw:function(chart){
+  var ctx=chart.ctx;
+  chart.data.datasets.forEach(function(ds,di){
+    if(ds.type==='line')return;
+    var meta=chart.getDatasetMeta(di);
+    if(meta.hidden)return;
+    meta.data.forEach(function(el,i){
+      var val=ds.data[i];
+      if(val===null||val===undefined||(el.height||0)<10)return;
+      ctx.save();
+      ctx.font='800 13px Segoe UI,Arial';
+      ctx.textAlign='center';ctx.textBaseline='middle';
+      var pos=el.tooltipPosition();
+      ctx.strokeStyle='rgba(0,0,0,0.75)';ctx.lineWidth=4;ctx.lineJoin='round';
+      ctx.strokeText(val,pos.x,pos.y);
+      ctx.fillStyle='#fff';ctx.fillText(val,pos.x,pos.y);
+      ctx.restore();
+    });
+  });
+}};
+Chart.register(dlP);
+function byLine(field){return LN.map(function(l){return C.filter(function(c){return c.linea===l;}).reduce(function(a,c){return a+Math.max(0,c[field]);},0);});}
+var t22ByL=byLine('stock22');
+var t29ByL=byLine('stock29');
+var total22=t22ByL.reduce(function(a,b){return a+b;},0);
+var total29=t29ByL.reduce(function(a,b){return a+b;},0);
+var netDelta=total29-total22;
+document.getElementById('hT22').textContent=total22.toLocaleString('es-PE');
+document.getElementById('hT29').textContent=total29.toLocaleString('es-PE');
+document.getElementById('hDelta').textContent=(netDelta>=0?'+':'')+netDelta;
+document.getElementById('hDeltaBadge').className='badge '+(netDelta>0?'up':netDelta<0?'down':'neu');
+var lineDeltas=LN.map(function(l,i){return{linea:l,delta:t29ByL[i]-t22ByL[i]};});
+var bestUp=lineDeltas.slice().sort(function(a,b){return b.delta-a.delta;})[0];
+var bestDown=lineDeltas.slice().sort(function(a,b){return a.delta-b.delta;})[0];
+var moved=lineDeltas.filter(function(d){return d.delta!==0;}).length;
+document.getElementById('kUp').textContent=(bestUp.delta>0?'+':'')+bestUp.delta+' u.';
+document.getElementById('kUpSub').textContent=bestUp.linea;
+document.getElementById('kDown').textContent=bestDown.delta+' u.';
+document.getElementById('kDownSub').textContent=bestDown.linea;
+document.getElementById('kMoved').textContent=moved;
+document.getElementById('kStable').textContent=8-moved;
+function cajasFor(linea,fmt,units){
+  if(units<=0) return '0';
+  var upb=6;
+  if(fmt==='50 ml'){
+    upb = (linea==='Matacuy') ? 111 : 60;
+  }
+  var cajas=Math.floor(units/upb);
+  var sueltas=units%upb;
+  var tipo=(linea==='Matacuy'&&fmt==='50 ml')?'plancha':'caja';
+  var txt=cajas+' '+tipo+(cajas!==1?'s':'');
+  if(sueltas>0) txt+=' + '+sueltas+' sueltas';
+  return txt;
+}
+var chartComp=new Chart(document.getElementById('cCompLinea'),{
+  data:{labels:LN,datasets:[
+    {type:'bar',label:'Ago 25',data:t22ByL,backgroundColor:'#8FC1E8',borderWidth:0,order:2},
+    {type:'bar',label:'Sep 01',data:t29ByL,backgroundColor:'#0B3D6B',borderWidth:0,order:2},
+    {type:'line',label:'Tendencia Jun22',data:t22ByL,borderColor:'rgba(143,193,232,0.7)',borderDash:[6,4],borderWidth:2,pointRadius:0,fill:false,tension:0.3,order:1},
+    {type:'line',label:'Tendencia Jun29',data:t29ByL,borderColor:'rgba(11,61,107,0.85)',borderDash:[6,4],borderWidth:2,pointRadius:3,pointBackgroundColor:'#0B3D6B',fill:false,tension:0.3,order:0}
+  ]},
+  options:{
+    responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{
+      filter:function(item){return item.dataset.type==='bar';},
+      callbacks:{
+        label:function(ctx){return ' '+ctx.dataset.label+': '+ctx.raw+' u. total';},
+        afterLabel:function(ctx){
+          var linea=LN[ctx.dataIndex];
+          var wk=ctx.dataset.label==='Ago 25'?0:1;
+          var d=ALL_DETAIL[linea];
+          if(!d) return '';
+          var lines=[];
+          ['750','700','375','50'].forEach(function(fmt){
+            var u=d[fmt]?d[fmt][wk]:0;
+            if(!u||u<=0) return;
+            var fmtLabel=fmt==='700'?'700 ml (export.)':fmt+' ml';
+            lines.push(fmtLabel+': '+cajasFor(linea,fmtLabel,u));
+          });
+          return lines;
+        }
+      }
+    }},
+    scales:{
+      x:{grid:{display:false},ticks:{font:{size:10},maxRotation:20}},
+      y:{grid:{color:'rgba(122,59,18,.06)'},ticks:{font:{size:10}}}
+    }
+  },
+  plugins:[dlP]
+});
+function isF750(p){return p.upb===6&&p.desc.indexOf('750')>=0&&p.desc.indexOf('700')<0;}
+function isF375(p){return p.upb===6&&p.desc.indexOf('375')>=0;}
+function isF50(p){return p.upb===60||p.upb===111;}
+var formatChart=null;
+var LINE_COLORS={
+  'Matacuy':{dark:'#035B01',light:'#4FC150'},
+  'Licor de Café':{dark:'#422302',light:'#A99C8D'},
+  'Cosecha':{dark:'#7D6608',light:'#C5B86A'},
+  'Salqa Azul':{dark:'#0B3D6B',light:'#8FC1E8'}
+};
+function lighten(hex){return hex;}
+function renderFormatDetail(linea){
+  var d=CD.detail[linea];
+  var fmts, d22, d29;
+  if(linea==='Matacuy' && d['700']){
+    fmts=['750 ml','700 ml\n(exportación)','375 ml','50 ml'];
+    d22=[d['750'][0], d['700'][0], d['375'][0], d['50'][0]];
+    d29=[d['750'][1], d['700'][1], d['375'][1], d['50'][1]];
+  } else {
+    fmts=['750 ml','375 ml','50 ml'];
+    d22=[d['750'][0], d['375'][0], d['50'][0]];
+    d29=[d['750'][1], d['375'][1], d['50'][1]];
+  }
+  var col=LINE_COLORS[linea]||{dark:'#A0501A',light:'#E8B084'};
+  document.getElementById('legSwatch22').style.background=col.light;
+  document.getElementById('legSwatch29').style.background=col.dark;
+  if(formatChart) formatChart.destroy();
+  formatChart=new Chart(document.getElementById('cFormatDetail'),{
+    type:'bar',
+    data:{labels:fmts,datasets:[
+      {label:'Ago 25',data:d22,backgroundColor:col.light,borderWidth:0},
+      {label:'Sep 01',data:d29,backgroundColor:col.dark,borderWidth:0}
+    ]},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{
+        callbacks:{
+          label:function(ctx){return ' '+ctx.dataset.label+': '+ctx.raw+' u.';},
+          afterLabel:function(ctx){
+            var fmtLabel=fmts[ctx.dataIndex];
+            return cajasFor(linea,fmtLabel,ctx.raw);
+          }
+        }
+      }},
+      scales:{
+        x:{grid:{display:false},ticks:{font:{size:11}}},
+        y:{grid:{color:'rgba(122,59,18,.06)'},ticks:{font:{size:10}}}
+      }
+    },
+    plugins:[dlP]
+  });
+}
+renderFormatDetail('Matacuy');
+function selectLine(l,btn){
+  document.querySelectorAll('#lineFilters .fbtn').forEach(function(b){
+    b.classList.remove('active');
+    b.style.background='';
+    b.style.borderColor='';
+    b.style.color='';
+  });
+  btn.classList.add('active');
+  var col=LINE_COLORS[l]||{dark:'#A0501A'};
+  btn.style.background=col.dark;
+  btn.style.borderColor=col.dark;
+  btn.style.color='#fff';
+  renderFormatDetail(l);
+}
+document.addEventListener('DOMContentLoaded',function(){
+  var firstBtn=document.querySelector('#lineFilters .fbtn.active');
+  if(firstBtn){firstBtn.style.background='#035B01';firstBtn.style.borderColor='#035B01';firstBtn.style.color='#fff';}
+});
+function renderTbl(f){
+  var tbody=document.getElementById('tblBody');tbody.innerHTML='';
+  var list=C.filter(function(c){
+    if(f==='up')return c.delta>0;
+    if(f==='down')return c.delta<0;
+    if(f==='same')return c.delta===0;
+    return true;
+  });
+  list.forEach(function(c){
+    var cls='p-neu',lbl='Sin cambio',arrow='&mdash;';
+    if(c.delta>0){cls='p-up';lbl='Increment\u00f3';arrow='\u25b2';}
+    else if(c.delta<0){cls='p-down';lbl='Disminuy\u00f3';arrow='\u25bc';}
+    tbody.innerHTML+='<tr>'
+      +'<td style="font-weight:500">'+c.desc+'</td>'
+      +'<td><span style="font-size:10px;color:'+(LC[c.linea]||'#555')+';font-weight:600">'+c.linea+'</span></td>'
+      +'<td style="text-align:right">'+c.stock22+'</td>'
+      +'<td style="text-align:right;font-weight:700">'+c.stock29+'</td>'
+      +'<td style="text-align:right;font-weight:700;color:'+(c.delta>0?'#3F6B2C':c.delta<0?'#A33A24':'#A6927F')+'">'+(c.delta>0?'+':'')+c.delta+'</td>'
+      +'<td style="text-align:center"><span class="pill '+cls+'">'+arrow+' '+lbl+'</span></td>'
+      +'</tr>';
+  });
+}
+renderTbl('all');
+function fTbl(f,btn){document.querySelectorAll('#tblF .fbtn').forEach(function(b){b.classList.remove('active');});btn.classList.add('active');renderTbl(f);}
+</script>
+</body></html>

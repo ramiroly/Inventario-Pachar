@@ -2,8 +2,9 @@
 create table if not exists lineas (
   id uuid primary key default gen_random_uuid(),
   nombre text not null unique,
-  -- TODO: confirmar con Ramiro los hex reales de cada línea (paleta de los dashboards históricos).
-  -- Se dejan nullable para no inventar colores.
+  -- Hex reales cargados en seed/seed_lineas.sql (extraídos del dashboard
+  -- histórico de líquidos). Nullable por si se agrega una línea nueva
+  -- antes de definir su color.
   color_dark text,
   color_light text,
   color_sub text

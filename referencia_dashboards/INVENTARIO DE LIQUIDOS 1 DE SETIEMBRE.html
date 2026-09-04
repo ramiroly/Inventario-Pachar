@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dashboard Liquidos Ago 04 - Destileria Ancopacha</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#EEF5F3;color:#1A2E28;font-size:13px}
+.hdr{background:linear-gradient(135deg,#0A3D2E,#0F6E56,#1D9E75);color:#fff;padding:18px 32px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}
+.hdr h1{font-size:18px;font-weight:700}.hdr p{font-size:11px;opacity:.72;margin-top:2px}
+.badges{display:flex;gap:10px;flex-wrap:wrap}
+.badge{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);border-radius:8px;padding:7px 13px;text-align:center;min-width:78px}
+.badge strong{display:block;font-size:17px;font-weight:700;line-height:1.1}
+.badge span{font-size:10px;opacity:.75;text-transform:uppercase;letter-spacing:.04em}
+.badge.ok{background:rgba(80,200,140,.22)}.badge.up{background:rgba(40,180,120,.30)}.badge.down{background:rgba(220,80,60,.22)}
+.wrap{padding:18px 32px 32px;max-width:1500px;margin:0 auto}
+.sec{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:#0F6E56;border-left:3px solid #1D9E75;padding-left:8px;margin:0 0 14px}
+.kgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:11px;margin-bottom:16px}
+.kpi{background:#fff;border-radius:10px;padding:12px 14px;border-top:4px solid #1D9E75;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.kpi.red{border-top-color:#C0392B}.kpi.amb{border-top-color:#D4811A}.kpi.blu{border-top-color:#1A5276}.kpi.grn{border-top-color:#0F6E56}
+.kl{font-size:9px;text-transform:uppercase;letter-spacing:.07em;color:#6B7280;margin-bottom:3px}
+.kv{font-size:20px;font-weight:700;line-height:1}
+.kv.red{color:#C0392B}.kv.grn{color:#0F6E56}.kv.amb{color:#D4811A}.kv.blu{color:#1A5276}
+.kd{font-size:10px;margin-top:3px;color:#9CA3AF}
+.alert-bar{background:#FEF2F2;border:1px solid #FECACA;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:11px}
+.alert-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+.atag{font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px}
+.atag.red{background:#FEE2E2;color:#991B1B}.atag.amber{background:#FEF3C7;color:#92400E}
+.atag.green{background:#D1FAE5;color:#065F46}.atag.blue{background:#DBEAFE;color:#1E40AF}
+.donut-kpi{background:#fff;border-radius:10px;border:0.5px solid #D1E7D8;padding:16px 20px;margin-bottom:16px;display:flex;align-items:center;gap:28px}
+.linea-section{background:#fff;border-radius:12px;border:0.5px solid #D1E7D8;margin-bottom:14px;overflow:hidden}
+.linea-hdr{padding:10px 16px;display:flex;align-items:center;gap:10px}
+.linea-hdr-title{font-size:12px;font-weight:700;color:#fff}
+.linea-body{padding:14px 16px 16px}
+.tank-group-row{display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap}
+.tank-group-sep{width:1px;background:#E5E7EB;align-self:stretch;margin:0 4px;flex-shrink:0}
+.sub-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#9CA3AF;margin-bottom:6px}
+.sub-tanks{display:flex;flex-wrap:wrap;gap:8px}
+.tank-card{display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer}
+.tank-name{font-size:9px;font-weight:700;color:#374151;text-align:center;line-height:1.3}
+.tank-litros{font-size:11px;font-weight:700;color:#1A2E28;text-align:center}
+.tank-cap{font-size:9px;color:#9CA3AF;text-align:center}
+.tank-badge{font-size:8px;font-weight:700;padding:2px 6px;border-radius:20px;text-align:center}
+/* FLOATING TOOLTIP */
+#ftt{position:fixed;background:#1A2E28;color:#fff;border-radius:10px;padding:12px 15px;
+  font-size:11px;line-height:1.6;z-index:99999;box-shadow:0 6px 24px rgba(0,0,0,.45);
+  min-width:200px;max-width:270px;pointer-events:none;display:none;white-space:normal}
+.ftt-title{font-weight:700;font-size:12px;margin-bottom:7px;padding-bottom:6px;
+  border-bottom:1px solid rgba(255,255,255,.2);line-height:1.4}
+.ftt-row{display:flex;justify-content:space-between;gap:14px;margin-bottom:2px}
+.ftt-lbl{color:rgba(255,255,255,.6);flex-shrink:0}
+.ftt-val{font-weight:700}
+.ftt-div{border-top:1px solid rgba(255,255,255,.15);margin:6px 0}
+.ftt-up{color:#6EE7B7;font-weight:700}
+.ftt-down{color:#FCA5A5;font-weight:700}
+.ftt-new{color:#93C5FD;font-weight:700}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px}
+.card{background:#fff;border-radius:10px;padding:16px 18px;border:0.5px solid #D1E7D8}
+.card-t{font-size:11px;font-weight:600;color:#374151;margin-bottom:12px}
+.leg{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:9px}
+.leg span{display:flex;align-items:center;gap:4px;font-size:10px;color:#6B7280}
+.lsq{width:10px;height:7px;border-radius:2px;flex-shrink:0}
+.footer{text-align:center;padding:10px;font-size:10px;color:#9CA3AF;border-top:1px solid #D1E7D8;margin-top:4px}
+</style>
+</head>
+<body>
+<div id="ftt"></div>
+<div class="hdr">
+  <div>
+    <h1>Dashboard &mdash; Stock de L&iacute;quidos</h1>
+    <p>Destiler&iacute;a Ancopacha &nbsp;&middot;&nbsp; Corte: 01 de setiembre 2026 &nbsp;&middot;&nbsp; Comparativa vs 25 de agosto &nbsp;&middot;&nbsp; Terminados: 2,500 L &nbsp;&middot;&nbsp; Uso interno</p>
+  </div>
+  <div class="badges">
+    <div class="badge ok"><strong id="hTotal">-</strong><span>Litros terminados</span></div>
+    <div class="badge"><strong id="hPrev">-</strong><span>Litros Ago 04</span></div>
+    <div class="badge" id="hDeltaBadge"><strong id="hDelta">-</strong><span>Variaci&oacute;n neta</span></div>
+    <div class="badge"><strong id="hLineas">-</strong><span>L&iacute;neas activas</span></div>
+  </div>
+</div>
+<div class="wrap">
+<div class="kgrid" style="padding-top:4px">
+  <div class="kpi grn"><div class="kl">Total terminados</div><div class="kv grn" id="kTotal">-</div><div class="kd">litros en planta &mdash; 01 sep</div></div>
+  <div class="kpi blu"><div class="kl">L&iacute;nea dominante</div><div class="kv blu" style="font-size:14px" id="kTop">-</div><div class="kd" id="kTopSub">-</div></div>
+  <div class="kpi amb"><div class="kl">Ocupaci&oacute;n promedio</div><div class="kv amb" id="kOcup">-</div><div class="kd">de tanques terminados</div></div>
+  <div class="kpi grn"><div class="kl">Mayor incremento</div><div class="kv grn" style="font-size:13px" id="kUp">-</div><div class="kd" id="kUpSub">-</div></div>
+  <div class="kpi red"><div class="kl">Mayor descenso</div><div class="kv red" style="font-size:13px" id="kDown">-</div><div class="kd" id="kDownSub">-</div></div>
+</div>
+<div class="alert-bar" id="alertBar"></div>
+<div class="donut-kpi">
+  <div style="flex-shrink:0;position:relative;width:180px;height:180px">
+    <canvas id="cKpiDonut"></canvas>
+    <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none">
+      <div style="font-size:11px;color:#6B7280;font-weight:500">Total</div>
+      <div style="font-size:18px;font-weight:700;color:#0F6E56" id="donutCenter">-</div>
+      <div style="font-size:10px;color:#9CA3AF">litros</div>
+    </div>
+  </div>
+  <div id="donutLegend" style="display:flex;flex-direction:column;gap:6px;flex:1"></div>
+</div>
+<p class="sec">Tanques por l&iacute;nea &mdash; nivel actual (oscuro) vs Ago 04 (claro) &nbsp;&middot;&nbsp; Pasa el cursor sobre cada tanque para ver el detalle</p>
+<div id="lineaSections"></div>
+<p class="sec">Comparativa semanal &mdash; terminados Ago 04 vs Ago 04</p>
+<div class="g2">
+  <div class="card">
+    <div class="card-t">Litros por l&iacute;nea &mdash; Ago 04 vs Ago 04 (solo terminados)</div>
+    <div class="leg">
+      <span><span class="lsq" style="background:#A7D7C5"></span>Ago 04</span>
+      <span><span class="lsq" style="background:#0F6E56"></span>Ago 04</span>
+    </div>
+    <div style="position:relative;height:240px"><canvas id="cComp"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-t">Variaci&oacute;n neta por tanque terminado (Ago 04 &rarr; Ago 04)</div>
+    <div style="position:relative;height:240px"><canvas id="cDelta"></canvas></div>
+  </div>
+</div>
+</div>
+<div class="footer">Destiler&iacute;a Ancopacha &nbsp;&middot;&nbsp; L&iacute;quidos 01/09/2026 &nbsp;&middot;&nbsp; Nivel claro = Ago 04 &middot; Nivel oscuro = Ago 04 &nbsp;&middot;&nbsp; Uso interno</div>
+<script>
+var DATA=[{"linea": "Salqa Azul", "terminado": {"nombre": "SALQA AZUL TERMINADO LOTE 135", "lote": "Lote 135", "litros": 470, "cap": 2500, "prev": 470}, "subs": [{"nombre": "HIGH PROOF 80%", "litros": 115, "cap": 1100, "prev": 180}, {"nombre": "CARMEN MODESTO CRUDO", "litros": 150, "cap": 1100, "prev": 0}]}, {"linea": "Salqa Verde", "terminado": {"nombre": "SALQA VERDE 47% TERMINADO LOTE 64", "lote": "Lote 64", "litros": 130, "cap": 2500, "prev": 140}, "subs": [{"nombre": "DESTILADO DONAYRES CORAZÓN", "litros": 2100, "cap": 2500, "prev": 2100}]}, {"linea": "Matacuy", "terminado": {"nombre": "MATACUY LOTE 27 TERMINADO", "lote": "Lote 27", "litros": 70, "cap": 2500, "prev": 290}, "subs": [{"nombre": "EXTRACCION BASE BOTANICA CRUDO", "litros": 1000, "cap": 1100, "prev": 0}, {"nombre": "MC ANÍS 80% EXTRACCIÓN", "litros": 135, "cap": 650, "prev": 165}, {"nombre": "MC ANÍS CHACRA 35%", "litros": 190, "cap": 650, "prev": 220}, {"nombre": "MC APIO 80%", "litros": 55, "cap": 650, "prev": 100}, {"nombre": "MC CANELA Y CLAVO 80%", "litros": 10, "cap": 650, "prev": 40}, {"nombre": "MC HIERBA LUISA 80%", "litros": 410, "cap": 650, "prev": 470}, {"nombre": "MC HIERBA BUENA 80%", "litros": 75, "cap": 650, "prev": 120}, {"nombre": "MC HINOJO 80%", "litros": 65, "cap": 650, "prev": 110}, {"nombre": "MC MENTA 80%", "litros": 155, "cap": 650, "prev": 185}, {"nombre": "MC MANZANILLA 80%", "litros": 130, "cap": 650, "prev": 175}, {"nombre": "MC SIDRA 80%", "litros": 95, "cap": 650, "prev": 155}, {"nombre": "MC TORONJIL 80%", "litros": 70, "cap": 650, "prev": 130}]}, {"linea": "Añejo", "terminado": {"nombre": "SALQA AÑEJO EN 42% TERMINADO K 3,5", "lote": "K 3,5", "litros": 809, "cap": 2500, "prev": 809}, "subs": [{"nombre": "ROBLE AMERICANO 60% AÑEJO K5", "litros": 1050, "cap": 2500, "prev": 1050}, {"nombre": "REPOSO WISKY MASH K 3,5", "litros": 850, "cap": 2500, "prev": 850}]}, {"linea": "Reposado", "terminado": {"nombre": "SALQA REPOSADO EN 43% TERMINADO LOTE 15", "lote": "Lote 15", "litros": 270, "cap": 2500, "prev": 270}, "subs": []}, {"linea": "Cosecha", "terminado": {"nombre": "SALQA COSECHA TERMINADO LOTE 5", "lote": "Lote 5", "litros": 550, "cap": 2500, "prev": 550}, "subs": []}, {"linea": "Botanizado", "terminado": {"nombre": "SALQA BOTANIZADO NUEVO LOTE 19", "lote": "Lote 19", "litros": 520, "cap": 2500, "prev": 520}, "subs": [{"nombre": "BASE FRANCHESCA 80%", "litros": 200, "cap": 650, "prev": 200}, {"nombre": "EXTRACCIONES MANZANA Y PERA 80%", "litros": 90, "cap": 650, "prev": 90}, {"nombre": "EXTRACCIONES HOJAS CÍTRICAS 80%", "litros": 120, "cap": 650, "prev": 120}]}, {"linea": "Licor de Café", "terminado": {"nombre": "LICOR DE CAFÉ EN 24% LOTE 5", "lote": "Lote 5", "litros": 40, "cap": 2500, "prev": 70}, "subs": []}];
+var LINEAS=['Matacuy','Salqa Azul','Salqa Verde','Anejo','Reposado','Cosecha','Botanizado','Licor de Cafe'];
+var LINEAS_DISPLAY={'Matacuy':'Matacuy','Salqa Azul':'Salqa Azul','Salqa Verde':'Salqa Verde','Anejo':'A\u00f1ejo','Reposado':'Reposado','Cosecha':'Cosecha','Botanizado':'Botanizado','Licor de Cafe':'Licor de Caf\u00e9'};
+var LC={'Matacuy':'#024A00','Salqa Azul':'#0B3D6B','Salqa Verde':'#1E8449','Anejo':'#622211','Reposado':'#117A65','Cosecha':'#7D6608','Botanizado':'#009124','Licor de Cafe':'#422302'};
+var LCL={'Matacuy':'#8FBC8E','Salqa Azul':'#85C1E9','Salqa Verde':'#A9DFBF','Anejo':'#C8928A','Reposado':'#A2D9CE','Cosecha':'#F9E79F','Botanizado':'#A9DFBF','Licor de Cafe':'#D7BDE2'};
+var LCS={'Matacuy':'#036B00','Salqa Azul':'#1A5276','Salqa Verde':'#1E8449','Anejo':'#7D2D1A','Reposado':'#148F77','Cosecha':'#9A7D0A','Botanizado':'#0B7B1E','Licor de Cafe':'#5D3215'};
+
+// Map linea names in DATA to LINEAS keys
+function lkey(l){
+  if(l==='Salqa Verde') return 'Salqa Verde';
+  if(l==='Salqa Azul')  return 'Salqa Azul';
+  if(l==='A\u00f1ejo') return 'Anejo';
+  if(l==='Licor de Caf\u00e9') return 'Licor de Cafe';
+  return l;
+}
+
+Chart.defaults.font.family="'Segoe UI',Arial,sans-serif";
+Chart.defaults.color='#6B7280';
+
+var totalTerm=DATA.reduce(function(a,d){return a+d.terminado.litros;},0);
+var totalPrev=DATA.reduce(function(a,d){return a+d.terminado.prev;},0);
+var netDelta=totalTerm-totalPrev;
+var byLinea={};
+LINEAS.forEach(function(k){
+  var d=DATA.find(function(x){return lkey(x.linea)===k;});
+  byLinea[k]=d?d.terminado.litros:0;
+});
+var topKey=LINEAS.slice().sort(function(a,b){return byLinea[b]-byLinea[a];})[0];
+var ocupProm=Math.round(DATA.reduce(function(a,d){return a+d.terminado.litros/d.terminado.cap*100;},0)/DATA.length);
+var srt=DATA.slice().sort(function(a,b){return(b.terminado.litros-b.terminado.prev)-(a.terminado.litros-a.terminado.prev);});
+var maxUp=srt[0];
+var maxDown=DATA.filter(function(d){return d.terminado.litros<d.terminado.prev;}).sort(function(a,b){return(a.terminado.litros-a.terminado.prev)-(b.terminado.litros-b.terminado.prev);})[0];
+
+document.getElementById('hTotal').textContent=totalTerm.toLocaleString('es-PE')+' L';
+document.getElementById('hPrev').textContent=totalPrev.toLocaleString('es-PE')+' L';
+document.getElementById('hDelta').textContent=(netDelta>=0?'+':'')+Math.round(netDelta)+' L';
+document.getElementById('hDeltaBadge').className='badge '+(netDelta>=0?'up':'down');
+document.getElementById('hLineas').textContent=DATA.filter(function(d){return d.terminado.litros>0;}).length;
+document.getElementById('kTotal').textContent=totalTerm.toLocaleString('es-PE')+' L';
+document.getElementById('kTop').textContent=LINEAS_DISPLAY[topKey]||topKey;
+document.getElementById('kTopSub').textContent=byLinea[topKey].toLocaleString('es-PE')+' L';
+document.getElementById('kOcup').textContent=ocupProm+'%';
+document.getElementById('kUp').textContent=maxUp?maxUp.linea:'--';
+document.getElementById('kUpSub').textContent=maxUp?(maxUp.terminado.prev+' a '+maxUp.terminado.litros+' L ('+(maxUp.terminado.litros-maxUp.terminado.prev>=0?'+':'')+Math.round(maxUp.terminado.litros-maxUp.terminado.prev)+' L)'):'';
+document.getElementById('kDown').textContent=maxDown?maxDown.linea:'--';
+document.getElementById('kDownSub').textContent=maxDown?(maxDown.terminado.prev+' a '+maxDown.terminado.litros+' L ('+Math.round(maxDown.terminado.litros-maxDown.terminado.prev)+' L)'):'';
+
+var alertHTML='<strong>Estado del inventario &mdash; 01 sep 2026 vs 20 jul 2026</strong><div class="alert-tags">';
+DATA.forEach(function(d){
+  var delta=d.terminado.litros-d.terminado.prev;
+  if(d.terminado.prev===0&&d.terminado.litros>0) alertHTML+='<span class="atag blue">Nuevo lote: '+d.terminado.lote+' ('+d.terminado.litros+' L)</span>';
+  else if(delta>100) alertHTML+='<span class="atag green">Subio: '+d.linea+' +'+Math.round(delta)+' L</span>';
+  else if(delta<-100) alertHTML+='<span class="atag red">Bajo: '+d.linea+' '+Math.round(delta)+' L</span>';
+});
+DATA.forEach(function(d){
+  d.subs.forEach(function(s){
+    if(s.prev===0&&s.litros>0) alertHTML+='<span class="atag blue">Nuevo sub: '+s.nombre+' ('+s.litros+' L)</span>';
+  });
+  if(d.terminado.litros>0&&d.terminado.litros/d.terminado.cap<0.1) alertHTML+='<span class="atag amber">Bajo: '+d.terminado.lote+' ('+d.terminado.litros+' L)</span>';
+});
+alertHTML+='</div>';
+document.getElementById('alertBar').innerHTML=alertHTML;
+
+// DONUT
+var dLabels=LINEAS.filter(function(k){return byLinea[k]>0;});
+var dVals=dLabels.map(function(k){return byLinea[k];});
+var dColors=dLabels.map(function(k){return LC[k];});
+var dTotal=dVals.reduce(function(a,b){return a+b;},0);
+document.getElementById('donutCenter').textContent=Math.round(dTotal).toLocaleString('es-PE');
+new Chart(document.getElementById('cKpiDonut'),{
+  type:'doughnut',
+  data:{labels:dLabels.map(function(k){return LINEAS_DISPLAY[k]||k;}),datasets:[{data:dVals,backgroundColor:dColors,borderWidth:3,borderColor:'#fff'}]},
+  options:{responsive:true,maintainAspectRatio:false,cutout:'62%',
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:function(ctx){return ' '+ctx.label+': '+ctx.raw.toLocaleString('es-PE')+' L ('+Math.round(ctx.raw/dTotal*100)+'%)';}}}  }},
+  plugins:[{id:'pct',afterDatasetsDraw:function(chart){
+    var ctx=chart.ctx;
+    chart.getDatasetMeta(0).data.forEach(function(arc,i){
+      var mid=arc.startAngle+(arc.endAngle-arc.startAngle)/2;
+      var r=(arc.outerRadius+arc.innerRadius)/2;
+      var x=arc.x+Math.cos(mid)*r,y=arc.y+Math.sin(mid)*r;
+      var pct=Math.round(dVals[i]/dTotal*100);if(pct<5)return;
+      ctx.save();ctx.strokeStyle='rgba(0,0,0,0.5)';ctx.lineWidth=3;ctx.lineJoin='round';
+      ctx.font='700 10px Segoe UI,Arial';ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.strokeText(pct+'%',x,y);ctx.fillStyle='#fff';ctx.fillText(pct+'%',x,y);ctx.restore();
+    });
+  }}]
+});
+var legendEl=document.getElementById('donutLegend');
+dLabels.forEach(function(k,i){
+  var pct=Math.round(dVals[i]/dTotal*100);
+  var row=document.createElement('div');row.style.cssText='display:flex;align-items:center;gap:8px';
+  row.innerHTML='<div style="width:10px;height:10px;border-radius:2px;flex-shrink:0;background:'+dColors[i]+'"></div>'
+    +'<div style="font-size:11px;color:#374151;flex:1;font-weight:500">'+(LINEAS_DISPLAY[k]||k)+'</div>'
+    +'<div style="font-size:11px;font-weight:700;color:#374151;min-width:65px;text-align:right">'+dVals[i].toLocaleString('es-PE')+' L</div>'
+    +'<div style="font-size:11px;font-weight:700;color:'+dColors[i]+';min-width:36px;text-align:right">'+pct+'%</div>';
+  legendEl.appendChild(row);
+});
+
+// SVG TANK
+function buildSVG(litros,prev,cap,col,colLt,W,H){
+  var rx=6,innerH=H-8;
+  var pN=Math.min(1,litros/cap),pP=prev!=null?Math.min(1,prev/cap):null;
+  var hN=Math.round(pN*innerH),hP=pP!=null?Math.round(pP*innerH):null;
+  var yN=H-4-hN,yP=pP!=null?H-4-hP:null;
+  var uid='t'+Math.random().toString(36).substr(2,9);
+  var s='<svg width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg">';
+  s+='<defs><clipPath id="'+uid+'"><rect x="3" y="3" width="'+(W-6)+'" height="'+(H-6)+'" rx="'+(rx-1)+'"/></clipPath></defs>';
+  s+='<rect x="2" y="2" width="'+(W-4)+'" height="'+(H-4)+'" rx="'+rx+'" fill="#F0F7F4" stroke="'+col+'" stroke-width="1.5"/>';
+  if(pP!=null&&hP>0){
+    s+='<rect x="3" y="'+yP+'" width="'+(W-6)+'" height="'+(H-3-yP)+'" fill="'+colLt+'" clip-path="url(#'+uid+')" />';
+    if(prev>litros) s+='<line x1="3" y1="'+yP+'" x2="'+(W-3)+'" y2="'+yP+'" stroke="'+col+'" stroke-width="1" stroke-dasharray="3,2" opacity="0.5"/>';
+  }
+  if(hN>0){
+    s+='<rect x="3" y="'+yN+'" width="'+(W-6)+'" height="'+(H-3-yN)+'" fill="'+col+'" clip-path="url(#'+uid+')" />';
+    s+='<line x1="3" y1="'+yN+'" x2="'+(W-3)+'" y2="'+yN+'" stroke="#fff" stroke-width="1.5" opacity="0.35"/>';
+  }
+  s+='<rect x="2" y="2" width="'+(W-4)+'" height="'+(H-4)+'" rx="'+rx+'" fill="none" stroke="'+col+'" stroke-width="1.5"/>';
+  if(hN>18){
+    var ty=yN+Math.round(hN/2);
+    s+='<text x="'+Math.round(W/2)+'" y="'+ty+'" text-anchor="middle" dominant-baseline="middle" font-family="Segoe UI,Arial,sans-serif" font-size="'+(W>55?11:9)+'" font-weight="700" fill="#fff" paint-order="stroke" stroke="#000" stroke-width="2" stroke-linejoin="round">'+Math.round(pN*100)+'%</text>';
+  } else if(litros>0){
+    s+='<text x="'+Math.round(W/2)+'" y="'+(yN-6)+'" text-anchor="middle" font-family="Segoe UI,Arial,sans-serif" font-size="9" font-weight="700" fill="'+col+'">'+Math.round(pN*100)+'%</text>';
+  }
+  return s+'</svg>';
+}
+
+function bSty(l,c){var p=l/c;if(p<=0)return'background:#FEE2E2;color:#991B1B';if(p<0.2)return'background:#FEF3C7;color:#92400E';if(p<0.5)return'background:#FEF3C7;color:#92400E';return'background:#D1FAE5;color:#065F46';}
+function bLbl(l,c){var p=l/c;if(p<=0)return'Vacio';if(p<0.2)return'Bajo';if(p<0.5)return'Medio';if(p<0.8)return'Bien';return'Alto';}
+
+// TOOLTIP system
+var ftt=document.getElementById('ftt');
+var fttOn=false;
+function showTT(html){ftt.innerHTML=html;ftt.style.display='block';fttOn=true;}
+function hideTT(){ftt.style.display='none';fttOn=false;}
+function moveTT(e){
+  if(!fttOn)return;
+  var x=e.clientX,y=e.clientY;
+  var vw=window.innerWidth,vh=window.innerHeight;
+  var w=ftt.offsetWidth||230,h=ftt.offsetHeight||180;
+  var left=x+16,top=y+10;
+  if(left+w>vw-4) left=x-w-10;
+  if(top+h>vh-4) top=y-h-10;
+  if(left<4) left=4;
+  if(top<4) top=4;
+  ftt.style.left=left+'px';
+  ftt.style.top=top+'px';
+}
+document.addEventListener('mousemove',moveTT);
+
+function ttTerm(t){
+  var delta=t.litros-t.prev;
+  var isNew=(t.prev===0&&t.litros>0);
+  var dCls=isNew?'ftt-new':delta>0?'ftt-up':delta<0?'ftt-down':'';
+  var dTxt=isNew?'Nuevo lote':(delta>=0?'+':'')+Math.round(delta)+' L';
+  return '<div class="ftt-title">'+t.nombre+'</div>'
+    +'<div class="ftt-row"><span class="ftt-lbl">Stock Ago 10</span><span class="ftt-val">'+t.litros.toLocaleString('es-PE')+' L</span></div>'
+    +(t.prev>0?'<div class="ftt-row"><span class="ftt-lbl">Stock Ago 10</span><span class="ftt-val" style="opacity:.7">'+t.prev.toLocaleString('es-PE')+' L</span></div>':'')
+    +'<div class="ftt-div"></div>'
+    +'<div class="ftt-row"><span class="ftt-lbl">Variacion</span><span class="ftt-val '+dCls+'">'+dTxt+'</span></div>'
+    +'<div class="ftt-row"><span class="ftt-lbl">Capacidad</span><span class="ftt-val">'+t.cap.toLocaleString('es-PE')+' L</span></div>'
+    +'<div class="ftt-row"><span class="ftt-lbl">Nivel actual</span><span class="ftt-val">'+Math.round(t.litros/t.cap*100)+'%</span></div>';
+}
+
+function ttSub(s){
+  var isNew=(s.prev===0&&s.litros>0);
+  var delta=s.litros-s.prev;
+  var dCls=isNew?'ftt-new':delta>0?'ftt-up':delta<0?'ftt-down':'';
+  var dTxt=isNew?'Nuevo':(delta>=0?'+':'')+Math.round(delta)+' L';
+  return '<div class="ftt-title">'+(isNew?'(Nuevo) ':'')+s.nombre+'</div>'
+    +'<div class="ftt-row"><span class="ftt-lbl">Stock Ago 10</span><span class="ftt-val">'+s.litros.toLocaleString('es-PE')+' L</span></div>'
+    +(!isNew&&s.prev>0?'<div class="ftt-row"><span class="ftt-lbl">Stock Ago 10</span><span class="ftt-val" style="opacity:.7">'+s.prev.toLocaleString('es-PE')+' L</span></div>':'')
+    +'<div class="ftt-div"></div>'
+    +'<div class="ftt-row"><span class="ftt-lbl">Variacion</span><span class="ftt-val '+dCls+'">'+dTxt+'</span></div>'
+    +'<div class="ftt-row"><span class="ftt-lbl">Capacidad</span><span class="ftt-val">'+s.cap.toLocaleString('es-PE')+' L</span></div>'
+    +'<div class="ftt-row"><span class="ftt-lbl">Nivel actual</span><span class="ftt-val">'+Math.round(s.litros/s.cap*100)+'%</span></div>';
+}
+
+// BUILD SECTIONS
+var secEl=document.getElementById('lineaSections');
+DATA.forEach(function(item){
+  var l=item.linea,t=item.terminado,subs=item.subs;
+  var k=lkey(l);
+  var col=LC[k]||'#555',colLt=LCL[k]||'#ddd',colS=LCS[k]||'#777';
+
+  var sec=document.createElement('div');sec.className='linea-section';
+  var hdr='<div class="linea-hdr" style="background:'+col+'">'
+    +'<span class="linea-hdr-title">'+l+'</span>'
+    +'<span style="font-size:10px;color:rgba(255,255,255,.75);margin-left:auto">'
+    +'Terminado: '+t.litros.toLocaleString('es-PE')+' L'
+    +(t.prev===0&&t.litros>0?' &middot; Lote nuevo':'')
+    +(subs.length?' &middot; '+subs.length+' subproducto'+(subs.length>1?'s':''):'')
+    +'</span></div>';
+
+  // terminado card
+  var tSvg=buildSVG(t.litros,t.prev>0?t.prev:null,t.cap,col,colLt,64,130);
+  var tCard=document.createElement('div');tCard.className='tank-card';
+  tCard.innerHTML='<div class="tank-name" style="max-width:72px">'+t.lote+(t.prev===0&&t.litros>0?' *':'')+'</div>'
+    +tSvg
+    +'<div class="tank-litros">'+t.litros.toLocaleString('es-PE')+' L</div>'
+    +'<div class="tank-cap">/ '+t.cap.toLocaleString('es-PE')+' L</div>'
+    +'<div class="tank-badge" style="'+bSty(t.litros,t.cap)+'">'+bLbl(t.litros,t.cap)+'</div>';
+  var tHTML=ttTerm(t);
+  tCard.addEventListener('mouseenter',function(){showTT(tHTML);});
+  tCard.addEventListener('mouseleave',hideTT);
+
+  // sub cards
+  var subWrap=document.createElement('div');subWrap.className='sub-tanks';
+  subs.forEach(function(s){
+    var isNew=(s.prev===0&&s.litros>0);
+    var sSvg=buildSVG(s.litros,s.prev>0?s.prev:null,s.cap,colS,colLt,46,96);
+    var sCard=document.createElement('div');sCard.className='tank-card';
+    var shortN=s.nombre.length>20?s.nombre.substring(0,19)+'...':s.nombre;
+    sCard.innerHTML='<div class="tank-name" style="max-width:54px;font-size:8px">'+(isNew?'* ':'')+shortN+'</div>'
+      +sSvg
+      +'<div class="tank-litros" style="font-size:10px">'+s.litros.toLocaleString('es-PE')+' L</div>'
+      +'<div class="tank-cap">/ '+s.cap.toLocaleString('es-PE')+' L</div>'
+      +'<div class="tank-badge" style="'+bSty(s.litros,s.cap)+';font-size:7px">'+bLbl(s.litros,s.cap)+'</div>';
+    var sHTML=ttSub(s);
+    sCard.addEventListener('mouseenter',function(){showTT(sHTML);});
+    sCard.addEventListener('mouseleave',hideTT);
+    subWrap.appendChild(sCard);
+  });
+
+  var body=document.createElement('div');body.className='linea-body';
+  var row=document.createElement('div');row.className='tank-group-row';
+  var tWrap=document.createElement('div');
+  var tLbl=document.createElement('div');tLbl.className='sub-label';tLbl.textContent='Terminado';
+  var tFlex=document.createElement('div');tFlex.style.display='flex';
+  tFlex.appendChild(tCard);
+  tWrap.appendChild(tLbl);tWrap.appendChild(tFlex);
+  row.appendChild(tWrap);
+  if(subs.length){
+    var sep=document.createElement('div');sep.className='tank-group-sep';row.appendChild(sep);
+    var sWrap=document.createElement('div');sWrap.style.flex='1';
+    var sLbl=document.createElement('div');sLbl.className='sub-label';sLbl.textContent='Subproductos';
+    sWrap.appendChild(sLbl);sWrap.appendChild(subWrap);
+    row.appendChild(sWrap);
+  }
+  body.appendChild(row);
+  sec.innerHTML=hdr;
+  sec.appendChild(body);
+  secEl.appendChild(sec);
+});
+
+// CHARTS
+var comp20=LINEAS.map(function(k){var d=DATA.find(function(x){return lkey(x.linea)===k;});return d?d.terminado.prev:0;});
+var comp04=LINEAS.map(function(k){var d=DATA.find(function(x){return lkey(x.linea)===k;});return d?d.terminado.litros:0;});
+var dLabelsChart=LINEAS.map(function(k){return LINEAS_DISPLAY[k]||k;});
+
+new Chart(document.getElementById('cComp'),{
+  type:'bar',
+  data:{labels:dLabelsChart,datasets:[
+    {label:'Ago 25',data:comp20,backgroundColor:'#A7D7C5',borderWidth:0},
+    {label:'Sep 01',data:comp04,backgroundColor:LINEAS.map(function(k){return LC[k];}),borderWidth:0}
+  ]},
+  options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{position:'top',labels:{font:{size:10},boxWidth:10}},
+      tooltip:{callbacks:{label:function(ctx){return ' '+ctx.dataset.label+': '+ctx.raw.toLocaleString('es-PE')+' L';}}}},
+    scales:{x:{grid:{display:false},ticks:{font:{size:9},maxRotation:30}},y:{grid:{color:'rgba(0,0,0,.05)'},ticks:{font:{size:10},callback:function(v){return v+' L';}}}}
+  }
+});
+
+var deltaVals=LINEAS.map(function(k,i){return Math.round(comp04[i]-comp20[i]);});
+new Chart(document.getElementById('cDelta'),{
+  type:'bar',
+  data:{labels:dLabelsChart,datasets:[{data:deltaVals,backgroundColor:deltaVals.map(function(v){return v>0?'#0F6E56':v<0?'#C0392B':'#9CA3AF';}),borderWidth:0}]},
+  options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:function(ctx){return ' '+(ctx.raw>=0?'+':'')+ctx.raw+' L';}}}},
+    scales:{x:{grid:{display:false},ticks:{font:{size:9},maxRotation:30}},y:{grid:{color:'rgba(0,0,0,.05)'},ticks:{font:{size:10},callback:function(v){return v+' L';}}}}
+  }
+});
+</script>
+</body></html>
