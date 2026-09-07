@@ -40,11 +40,14 @@ dashboardsRouter.get("/stock", requireRole("socio"), async (req, res) => {
   }
 
   const productosPorId = new Map((productos as ProductoTerminado[]).map((p) => [p.id, p]));
+  const lineasPorId = new Map((lineas ?? []).map((l) => [l.id, l]));
   const diasPeriodo = diasEntre(desde, hasta);
 
   const stockPorProducto = new Map<string, number>();
   const salidasPeriodoPorProducto = new Map<string, number>();
-  const salidasPorDestino = new Map<string, number>();
+  // Por destino Y por línea a la vez, para el desglose "unidades despachadas
+  // por línea" dentro de cada destino (igual al SAL.por_destino[x].lineas original).
+  const salidasPorDestino = new Map<string, { total: number; porLinea: Map<string, number> }>();
 
   for (const mov of movimientos as MovimientoTerminado[]) {
     const signo = mov.tipo === "entrada" ? 1 : -1;
@@ -56,16 +59,30 @@ dashboardsRouter.get("/stock", requireRole("socio"), async (req, res) => {
         (salidasPeriodoPorProducto.get(mov.producto_id) ?? 0) + mov.cantidad
       );
       if (mov.destino) {
-        salidasPorDestino.set(mov.destino, (salidasPorDestino.get(mov.destino) ?? 0) + mov.cantidad);
+        const producto = productosPorId.get(mov.producto_id);
+        const lineaNombre = producto ? lineasPorId.get(producto.linea_id)?.nombre : undefined;
+        let entry = salidasPorDestino.get(mov.destino);
+        if (!entry) {
+          entry = { total: 0, porLinea: new Map() };
+          salidasPorDestino.set(mov.destino, entry);
+        }
+        entry.total += mov.cantidad;
+        if (lineaNombre) entry.porLinea.set(lineaNombre, (entry.porLinea.get(lineaNombre) ?? 0) + mov.cantidad);
       }
     }
   }
 
   const stockPorLinea = new Map<string, number>();
   const salidasPeriodoPorLinea = new Map<string, number>();
-  const semaforoPorSku: Array<{
+  const productosResp: Array<{
     producto_id: string;
     descripcion: string;
+    linea_id: string;
+    linea: string;
+    formato: number;
+    upb: number;
+    tipo_envase: string;
+    es_exportacion: boolean;
     stock: number;
     cajas: number;
     sueltas: number;
@@ -87,9 +104,15 @@ dashboardsRouter.get("/stock", requireRole("socio"), async (req, res) => {
     const { cajas, sueltas } = calcularCajasYSueltas(stock, producto.upb);
     const coberturaSemanas = calcularCoberturaSemanas(stock, salidasPeriodo, diasPeriodo);
 
-    semaforoPorSku.push({
+    productosResp.push({
       producto_id: producto.id,
       descripcion: producto.descripcion,
+      linea_id: producto.linea_id,
+      linea: lineasPorId.get(producto.linea_id)?.nombre ?? "",
+      formato: producto.formato,
+      upb: producto.upb,
+      tipo_envase: producto.tipo_envase,
+      es_exportacion: producto.es_exportacion,
       stock,
       cajas,
       sueltas,
@@ -100,6 +123,7 @@ dashboardsRouter.get("/stock", requireRole("socio"), async (req, res) => {
     });
   }
 
+  const semanasPeriodo = diasPeriodo / 7;
   const coberturaPorLinea = (lineas ?? []).map((linea) => {
     const stock = stockPorLinea.get(linea.id) ?? 0;
     const salidasPeriodo = salidasPeriodoPorLinea.get(linea.id) ?? 0;
@@ -107,11 +131,22 @@ dashboardsRouter.get("/stock", requireRole("socio"), async (req, res) => {
     return {
       linea_id: linea.id,
       nombre: linea.nombre,
+      color_dark: linea.color_dark,
+      color_light: linea.color_light,
+      color_sub: linea.color_sub,
       stock,
+      salidas_periodo: salidasPeriodo,
+      weekly_rate: semanasPeriodo > 0 ? salidasPeriodo / semanasPeriodo : 0,
       cobertura_semanas: coberturaSemanas,
       semaforo: calcularSemaforo(coberturaSemanas),
     };
   });
+
+  const salidasPorDestinoResp = [...salidasPorDestino.entries()].map(([destino, { total, porLinea }]) => ({
+    destino,
+    total,
+    por_linea: Object.fromEntries(porLinea),
+  }));
 
   res.json({
     periodo: { desde, hasta, dias: diasPeriodo },
@@ -119,9 +154,16 @@ dashboardsRouter.get("/stock", requireRole("socio"), async (req, res) => {
       stock_total: [...stockPorProducto.values()].reduce((a, b) => a + b, 0),
       salidas_periodo_total: [...salidasPeriodoPorProducto.values()].reduce((a, b) => a + b, 0),
     },
+    lineas: coberturaPorLinea,
+    productos: productosResp,
+    salidas: {
+      total: [...salidasPeriodoPorProducto.values()].reduce((a, b) => a + b, 0),
+      por_destino: salidasPorDestinoResp,
+    },
+    // Alias retro-compatibles con la forma anterior de la respuesta.
     cobertura_por_linea: coberturaPorLinea,
-    salidas_por_destino: Object.fromEntries(salidasPorDestino),
-    semaforo_por_sku: semaforoPorSku,
+    salidas_por_destino: Object.fromEntries(salidasPorDestinoResp.map((d) => [d.destino, d.total])),
+    semaforo_por_sku: productosResp,
   });
 });
 

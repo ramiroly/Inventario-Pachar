@@ -4,7 +4,7 @@ import { ProtectedRoute } from "./components/ProtectedRoute";
 import { LoginPage } from "./pages/LoginPage";
 import { SetPasswordPage } from "./pages/SetPasswordPage";
 import { RecoverPasswordPage } from "./pages/RecoverPasswordPage";
-import { DashboardStockPage } from "./pages/DashboardStockPage";
+import { StockDashboardPage } from "./dashboards/stock/StockDashboardPage";
 import { DashboardComparativoPage } from "./pages/DashboardComparativoPage";
 import { DashboardLiquidosPage } from "./pages/DashboardLiquidosPage";
 import { MovimientosFormPage } from "./pages/MovimientosFormPage";
@@ -37,7 +37,7 @@ export default function App() {
           path="/"
           element={
             <ProtectedRoute>
-              <DashboardStockPage />
+              <StockDashboardPage />
             </ProtectedRoute>
           }
         />

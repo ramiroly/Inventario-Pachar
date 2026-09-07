@@ -1,0 +1,385 @@
+/* Porteo del <style> de INVENTARIOS TERMINADOS 1 SETIEMBRE.html (CSS Modules
+   para que las clases no choquen con los otros 2 dashboards). */
+.page {
+  font-family: "Segoe UI", Arial, sans-serif;
+  background: #eef2ee;
+  color: #1a2e1a;
+  font-size: 13px;
+}
+.hdr {
+  background: linear-gradient(135deg, #1b4332, #2d6a4f, #40916c);
+  color: #fff;
+  padding: 20px 36px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.hdr h1 {
+  font-size: 19px;
+  font-weight: 700;
+}
+.hdr p {
+  font-size: 11px;
+  opacity: 0.7;
+  margin-top: 2px;
+}
+.badges {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.badge {
+  background: rgba(255, 255, 255, 0.13);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  padding: 7px 14px;
+  text-align: center;
+  min-width: 80px;
+}
+.badge strong {
+  display: block;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.1;
+}
+.badge span {
+  font-size: 10px;
+  opacity: 0.75;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.badgeOk {
+  background: rgba(80, 220, 120, 0.2);
+}
+.badgeDanger {
+  background: rgba(220, 60, 60, 0.2);
+}
+.wrap {
+  padding: 22px 36px 36px;
+  max-width: 1440px;
+  margin: 0 auto;
+}
+.sec {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: #2d6a4f;
+  border-left: 3px solid #2d6a4f;
+  padding-left: 8px;
+  margin: 0 0 13px;
+}
+.g2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+.g31 {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+.threeCol {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+.card {
+  background: #fff;
+  border-radius: 10px;
+  padding: 16px 18px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.07);
+}
+.cardT {
+  font-size: 11px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 10px;
+}
+.kgrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 18px;
+}
+.kpi {
+  background: #fff;
+  border-radius: 10px;
+  padding: 13px 15px;
+  border-top: 4px solid #2d6a4f;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.07);
+}
+.kpiRed {
+  border-top-color: #c0392b;
+}
+.kpiAmb {
+  border-top-color: #d4811a;
+}
+.kpiBlu {
+  border-top-color: #1a5276;
+}
+.kpiGrn {
+  border-top-color: #27ae60;
+}
+.kl {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: #6b7280;
+  margin-bottom: 3px;
+}
+.kv {
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1;
+}
+.kvRed {
+  color: #c0392b;
+}
+.kvGrn {
+  color: #1b6b3a;
+}
+.kvAmb {
+  color: #d4811a;
+}
+.kd {
+  font-size: 10px;
+  margin-top: 3px;
+  color: #9ca3af;
+}
+.leg {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-bottom: 9px;
+}
+.leg span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  color: #6b7280;
+}
+.lsq {
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+  flex-shrink: 0;
+  display: inline-block;
+}
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-bottom: 12px;
+}
+.fbtn {
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  border-radius: 20px;
+  padding: 4px 11px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: #374151;
+  font-family: inherit;
+}
+.fbtn:hover,
+.fbtnActive {
+  background: #2d6a4f;
+  color: #fff;
+  border-color: #2d6a4f;
+}
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+.table thead th {
+  background: #f3f7f3;
+  padding: 6px 8px;
+  text-align: left;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #52735c;
+  border-bottom: 1px solid #d1e7d1;
+}
+.table tbody td {
+  padding: 6px 8px;
+  border-bottom: 1px solid #f0f4f0;
+  vertical-align: middle;
+}
+.table tbody tr:hover td {
+  background: #f8fbf8;
+}
+.table tbody tr:last-child td {
+  border-bottom: none;
+}
+.pill {
+  display: inline-flex;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 20px;
+}
+.pOk {
+  background: #d1fae5;
+  color: #065f46;
+}
+.pWarn {
+  background: #fef3c7;
+  color: #92400e;
+}
+.pDanger {
+  background: #fee2e2;
+  color: #991b1b;
+}
+.alertBar {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  padding: 11px 15px;
+  margin-bottom: 18px;
+}
+.alertTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+.atag {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 20px;
+}
+.atagRed {
+  background: #fee2e2;
+  color: #991b1b;
+}
+.atagAmber {
+  background: #fef3c7;
+  color: #92400e;
+}
+.semRow {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 5px;
+}
+.semLabel {
+  font-size: 10px;
+  font-weight: 500;
+  min-width: 165px;
+  flex-shrink: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.semBarWrap {
+  flex: 1;
+  background: #f0f4f0;
+  border-radius: 4px;
+  height: 20px;
+  overflow: hidden;
+}
+.semBar {
+  height: 100%;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  padding-left: 6px;
+}
+.semVal {
+  font-size: 10px;
+  color: #fff;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.semExtra {
+  font-size: 10px;
+  min-width: 165px;
+  text-align: right;
+  flex-shrink: 0;
+  font-weight: 600;
+}
+.cajasGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-top: 14px;
+}
+.cajaCard {
+  background: #f8fbf8;
+  border-radius: 8px;
+  padding: 10px 12px;
+  border: 1px solid #d1e7d1;
+}
+.cajaLinea {
+  font-size: 10px;
+  font-weight: 700;
+  margin-bottom: 6px;
+  border-bottom: 1px solid #d1e7d1;
+  padding-bottom: 4px;
+}
+.cajaRow {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: #374151;
+  margin-bottom: 3px;
+  gap: 6px;
+  align-items: flex-start;
+}
+.cajaRow span:first-child {
+  color: #6b7280;
+  flex-shrink: 0;
+}
+.cajaRow span:last-child {
+  font-weight: 700;
+  text-align: right;
+}
+.tooltipBox {
+  background: #1a2e1a;
+  color: #fff;
+  border-radius: 10px;
+  padding: 12px 16px;
+  font-size: 11px;
+  min-width: 210px;
+  max-width: 290px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+.ttTitle {
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+.ttRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 3px;
+}
+.ttLbl {
+  color: rgba(255, 255, 255, 0.65);
+}
+.ttVal {
+  font-weight: 700;
+}
+.footer {
+  text-align: center;
+  padding: 12px;
+  font-size: 10px;
+  color: #9ca3af;
+  border-top: 1px solid #d1e7d1;
+  margin-top: 6px;
+}

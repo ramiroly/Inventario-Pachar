@@ -54,26 +54,45 @@ export type Semaforo = "rojo" | "naranja" | "verde";
 export interface CoberturaLinea {
   linea_id: string;
   nombre: string;
+  color_dark: string | null;
+  color_light: string | null;
+  color_sub: string | null;
   stock: number;
+  salidas_periodo: number;
+  weekly_rate: number;
   cobertura_semanas: number | null;
   semaforo: Semaforo;
+}
+
+export interface ProductoDashboard {
+  producto_id: string;
+  descripcion: string;
+  linea_id: string;
+  linea: string;
+  formato: Formato;
+  upb: number;
+  tipo_envase: TipoEnvase;
+  es_exportacion: boolean;
+  stock: number;
+  cajas: number;
+  sueltas: number;
+  cobertura_semanas: number | null;
+  semaforo: Semaforo;
+  excluir_grafico_principal: boolean;
+}
+
+export interface SalidaPorDestino {
+  destino: string;
+  total: number;
+  por_linea: Record<string, number>;
 }
 
 export interface DashboardStockResponse {
   periodo: { desde: string; hasta: string; dias: number };
   kpis: { stock_total: number; salidas_periodo_total: number };
-  cobertura_por_linea: CoberturaLinea[];
-  salidas_por_destino: Record<string, number>;
-  semaforo_por_sku: Array<{
-    producto_id: string;
-    descripcion: string;
-    stock: number;
-    cajas: number;
-    sueltas: number;
-    cobertura_semanas: number | null;
-    semaforo: Semaforo;
-    excluir_grafico_principal: boolean;
-  }>;
+  lineas: CoberturaLinea[];
+  productos: ProductoDashboard[];
+  salidas: { total: number; por_destino: SalidaPorDestino[] };
 }
 
 export interface DashboardLiquidosResponse {
