@@ -35,6 +35,8 @@ function isF50(p: ProductoDashboard) {
 
 function cajasLabel(p: ProductoDashboard): string {
   if (p.stock <= 0) return "AGOTADO";
+  // Garrafas de 4L se cuentan como unidades sueltas, no van en caja/plancha.
+  if (p.tipo_envase === "unidad") return `${p.stock} unidad${p.stock !== 1 ? "es" : ""}`;
   const tipo = p.tipo_envase === "plancha" ? "plancha" : "caja";
   let txt = `${p.cajas} ${tipo}${p.cajas !== 1 ? "s" : ""}`;
   if (p.sueltas > 0) txt += ` + ${p.sueltas} sueltas`;
@@ -524,7 +526,7 @@ export function StockDashboardPage() {
                     <td style={{ textAlign: "right", color: "#2D6A4F", fontWeight: 600 }}>{p.stock > 0 ? cajasLabel(p) : "—"}</td>
                     <td style={{ textAlign: "right" }}>{p.stock > 0 ? p.sueltas : "—"}</td>
                     <td style={{ textAlign: "center", color: "#9CA3AF" }}>
-                      {p.upb} {p.tipo_envase === "plancha" ? "u/plancha" : "u/caja"}
+                      {p.tipo_envase === "unidad" ? "unidad" : `${p.upb} ${p.tipo_envase === "plancha" ? "u/plancha" : "u/caja"}`}
                     </td>
                     <td style={{ textAlign: "center" }}>
                       <span className={`${styles.pill} ${pill}`}>{label}</span>

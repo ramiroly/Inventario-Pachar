@@ -14,8 +14,8 @@ export interface Linea {
   color_sub: string | null;
 }
 
-export type Formato = 750 | 700 | 375 | 50;
-export type TipoEnvase = "caja" | "plancha";
+export type Formato = 750 | 700 | 375 | 50 | 4000;
+export type TipoEnvase = "caja" | "plancha" | "unidad";
 
 export interface ProductoTerminado {
   id: string;

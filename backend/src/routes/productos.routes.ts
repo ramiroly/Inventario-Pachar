@@ -8,9 +8,9 @@ export const productosRouter = Router();
 const productoSchema = z.object({
   linea_id: z.string().uuid(),
   descripcion: z.string().min(1),
-  formato: z.union([z.literal(750), z.literal(700), z.literal(375), z.literal(50)]),
+  formato: z.union([z.literal(750), z.literal(700), z.literal(375), z.literal(50), z.literal(4000)]),
   upb: z.number().int().positive(),
-  tipo_envase: z.enum(["caja", "plancha"]),
+  tipo_envase: z.enum(["caja", "plancha", "unidad"]),
   es_exportacion: z.boolean().default(false),
 });
 

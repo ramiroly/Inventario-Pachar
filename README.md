@@ -7,10 +7,19 @@ Ver la especificación completa en `especificacion_sistema_inventario.md` (spec 
 ## Estado de este scaffold
 
 Modelo de datos + backend con los cálculos ya validados (Fases 1-2 de la spec), ya con datos
-reales cargados: colores por línea, los 25 SKUs de terminados, los 28 tanques de líquidos con
-sus capacidades reales, y el corte de stock al 01/09/2026 (ver `backend/src/db/seed/`).
-Todavía falta: la réplica visual exacta de los 3 dashboards históricos (por ahora el frontend
-tiene páginas placeholder que consumen la misma API) y el formulario de carga completo.
+reales cargados: colores por línea, 34 SKUs de terminados (25 del corte inicial + 3 variantes
+"Inglés" de exportación + 6 garrafas de 4L), los 28 tanques de líquidos con sus capacidades
+reales, y el historial real de movimientos de terminados del 04/08 al 01/09/2026 — 72 salidas
+reales por fecha/destino/cantidad, tomadas de
+`referencia_dashboards/../TERMINADOS PACHAR 1 SETIEMBRE cloude.xlsx` (hoja "salidas de
+productos") — más un saldo de apertura calculado por SKU para que el stock resultante
+(entradas − salidas) coincida exacto con el corte real del 01/09/2026 (ver `backend/src/db/seed/`).
+
+El dashboard de **stock terminados** ya está reconstruido igual al HTML histórico (gráficos,
+tooltips, cobertura, salidas por destino, todo con datos reales). Comparativo y Líquidos todavía
+tienen páginas placeholder que consumen la misma API. Falta también el formulario de carga
+completo para que los admins registren movimientos nuevos desde la UI (hoy solo existe un
+placeholder básico).
 
 ## Stack
 
@@ -32,10 +41,10 @@ tiene páginas placeholder que consumen la misma API) y el formulario de carga c
    ```
 
 2. **Crear el proyecto en Supabase** y, en el dashboard, ir a *SQL Editor* y correr en orden
-   los archivos de `backend/src/db/migrations/` (001 a 007), y luego los de
+   los archivos de `backend/src/db/migrations/` (001 a 008), y luego los de
    `backend/src/db/seed/` en este orden (cada uno depende del anterior por llaves foráneas):
-   `seed_lineas.sql` → `seed_productos_terminados.sql` → `seed_tanques_liquidos.sql` →
-   `seed_stock_liquidos_snapshot.sql` → `seed_movimientos_apertura.sql`.
+   `seed_lineas.sql` → `seed_productos_terminados.sql` → `seed_productos_ingles_garrafa.sql` →
+   `seed_tanques_liquidos.sql` → `seed_stock_liquidos_snapshot.sql` → `seed_movimientos_reales.sql`.
 
 3. **Crear usuarios y perfiles**: en *Authentication > Users* del dashboard de Supabase, crear
    un usuario por cada persona (Ramiro, Walter, Haresh, Ishmael, Joaquín), y para cada uno
@@ -60,26 +69,18 @@ tiene páginas placeholder que consumen la misma API) y el formulario de carga c
 ## Datos de referencia (histórico)
 
 Cortes de stock total terminados (unidades), para validar cálculos — son totales agregados de
-toda la destilería, coinciden con la suma de los 25 SKUs ya cargados en el corte de Sep01
-(4,215 unidades, ver `seed_productos_terminados.sql` + `seed_movimientos_apertura.sql`):
+toda la destilería, coinciden exacto con el stock calculado (entradas − salidas) de los 34 SKUs
+ya cargados al corte de Sep01 (4,215 unidades):
 
 Jun22=3048, Jun29=3048, Jul01=3135, Jul07=2484, Jul13=2814, Jul20=3138, Jul27=3714,
 Ago04=3792, Ago10=4343, Ago17=2633, Ago25=2897, Sep01=4215.
 
-**Salidas por destino (04 ago – 01 sep 2026, total 4,510 u., incl. garrafas 4L)** — desglosado
-por línea, no por SKU individual, así que no se cargó como `movimientos_terminados` (se
-inventaría precisión que la fuente no tiene). Extraído de "INVENTARIOS TERMINADOS 1 SETIEMBRE.html":
-
-| Destino | Total | Líneas principales |
-|---|---|---|
-| Almacén Lima | 1,668 | Matacuy 1068, Licor de Café 300, Salqa Azul 180, Botanizado 120 |
-| Exportación | 1,020 | Matacuy 756, Añejo 132, Salqa Verde 132 |
-| Tienda Pachar | 488 | Cosecha 138, Licor de Café 122, resto repartido |
-| Tambo del Inca | 316 | Matacuy 111, Añejo 132, Licor de Café 72 |
-| Almacén Cusco | 312 | Matacuy 156, Salqa Azul 96, Cosecha 60 |
-| El Albergue | 292 | repartido entre las 8 líneas |
-| Herbario | 264 | Matacuy 108, Añejo 60, Cosecha 60 |
-| Tienda Chuncho | 150 | Cosecha 60, Añejo 60, Matacuy 30 |
-
-Por línea: Matacuy 2331, Licor de Café 574, Añejo 422, Botanizado 228, Salqa Azul 369,
-Cosecha 379, Salqa Verde 201, Reposado 6.
+**Movimientos reales de terminados (04 ago – 01 sep 2026)**: `seed_movimientos_reales.sql` carga
+las 72 salidas reales (fecha, SKU, destino, cantidad) tal cual están en
+`TERMINADOS PACHAR 1 SETIEMBRE cloude.xlsx` (hoja "salidas de productos"), verificadas contra
+el dashboard histórico — el total (4,510 u.) y el desglose por destino y por línea coinciden
+exacto. Como no hay registro de entradas/producción real anterior al 04/08, cada SKU arranca con
+un **saldo de apertura calculado** (`stock_real_al_01_set + total_salidas_del_periodo`, fechado
+2026-08-03, un día antes del primer movimiento real) para que el stock resultante llegue exacto
+al corte real — no es un número inventado, es la única apertura consistente con ambos datos
+reales conocidos (corte final y salidas del período).
