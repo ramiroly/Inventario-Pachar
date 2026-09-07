@@ -593,8 +593,9 @@ function SalidasSection({ salidas }: { salidas: DashboardStockResponse["salidas"
     );
   }
 
-  const destinos = salidas.por_destino.map((d) => d.destino);
-  const destVals = salidas.por_destino.map((d) => d.total);
+  const porDestinoOrdenado = [...salidas.por_destino].sort((a, b) => b.total - a.total);
+  const destinos = porDestinoOrdenado.map((d) => d.destino);
+  const destVals = porDestinoOrdenado.map((d) => d.total);
   const maxDest = Math.max(...destVals, 1);
 
   return (
@@ -609,7 +610,7 @@ function SalidasSection({ salidas }: { salidas: DashboardStockResponse["salidas"
           <div style={{ fontSize: 11, color: "#9CA3AF" }}>unidades en el período</div>
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-          {salidas.por_destino.map((d, i) => {
+          {porDestinoOrdenado.map((d, i) => {
             const pct = Math.round((d.total / salidas.total) * 100);
             const bw = Math.round((d.total / maxDest) * 100);
             return (
