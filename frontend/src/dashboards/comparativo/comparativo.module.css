@@ -1,0 +1,243 @@
+/* Porteo del <style> de COMPARATIVA TERMINADOS 1 DE SETIEMBRE.html (CSS
+   Modules para que las clases no choquen con los otros 2 dashboards). */
+.page {
+  font-family: "Segoe UI", Arial, sans-serif;
+  background: #fbf3ec;
+  color: #2e1f14;
+  font-size: 13px;
+}
+.hdr {
+  background: linear-gradient(135deg, #7a3b12, #a0501a, #c9702e);
+  color: #fff;
+  padding: 20px 36px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.hdr h1 {
+  font-size: 19px;
+  font-weight: 700;
+}
+.hdr p {
+  font-size: 11px;
+  opacity: 0.75;
+  margin-top: 2px;
+}
+.badges {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.badge {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 8px;
+  padding: 7px 14px;
+  text-align: center;
+  min-width: 90px;
+}
+.badge strong {
+  display: block;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.1;
+}
+.badge span {
+  font-size: 10px;
+  opacity: 0.8;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.badgeUp {
+  background: rgba(120, 200, 120, 0.25);
+}
+.badgeDown {
+  background: rgba(220, 90, 60, 0.3);
+}
+.badgeNeu {
+  background: rgba(255, 255, 255, 0.15);
+}
+.wrap {
+  padding: 22px 36px 36px;
+  max-width: 1440px;
+  margin: 0 auto;
+}
+.sec {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: #a0501a;
+  border-left: 3px solid #a0501a;
+  padding-left: 8px;
+  margin: 0 0 13px;
+}
+.g2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+.card {
+  background: #fff;
+  border-radius: 10px;
+  padding: 16px 18px;
+  box-shadow: 0 1px 4px rgba(122, 59, 18, 0.1);
+}
+.cardT {
+  font-size: 11px;
+  font-weight: 600;
+  color: #5c4332;
+  margin-bottom: 10px;
+}
+.kgrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 18px;
+}
+.kpi {
+  background: #fff;
+  border-radius: 10px;
+  padding: 13px 15px;
+  border-top: 4px solid #a0501a;
+  box-shadow: 0 1px 4px rgba(122, 59, 18, 0.1);
+}
+.kpiRed {
+  border-top-color: #c0392b;
+}
+.kpiAmb {
+  border-top-color: #d4811a;
+}
+.kpiBlu {
+  border-top-color: #7a3b12;
+}
+.kpiGrn {
+  border-top-color: #5e8c4a;
+}
+.kl {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: #8a6f5c;
+  margin-bottom: 3px;
+}
+.kv {
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1;
+  color: #2e1f14;
+}
+.kvRed {
+  color: #c0392b;
+}
+.kvGrn {
+  color: #3f6b2c;
+}
+.kvAmb {
+  color: #a0501a;
+}
+.kd {
+  font-size: 10px;
+  margin-top: 3px;
+  color: #a6927f;
+}
+.leg {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-bottom: 9px;
+}
+.leg span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  color: #6b5645;
+}
+.lsq {
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+  flex-shrink: 0;
+  display: inline-block;
+}
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-bottom: 12px;
+}
+.fbtn {
+  background: #f5ebe0;
+  border: 1px solid #e8d5c0;
+  border-radius: 20px;
+  padding: 4px 11px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: #5c4332;
+  font-family: inherit;
+}
+.fbtn:hover,
+.fbtnActive {
+  background: #a0501a;
+  color: #fff;
+  border-color: #a0501a;
+}
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+.table thead th {
+  background: #fbf3ec;
+  padding: 6px 8px;
+  text-align: left;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #8a5a33;
+  border-bottom: 1px solid #ead9c5;
+}
+.table tbody td {
+  padding: 6px 8px;
+  border-bottom: 1px solid #f5ebe0;
+  vertical-align: middle;
+}
+.table tbody tr:hover td {
+  background: #fbf3ec;
+}
+.table tbody tr:last-child td {
+  border-bottom: none;
+}
+.pill {
+  display: inline-flex;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 20px;
+}
+.pUp {
+  background: #e3f0dc;
+  color: #3f6b2c;
+}
+.pDown {
+  background: #fbe2dc;
+  color: #a33a24;
+}
+.pNeu {
+  background: #f0e6da;
+  color: #8a6f5c;
+}
+.footer {
+  text-align: center;
+  padding: 12px;
+  font-size: 10px;
+  color: #a6927f;
+  border-top: 1px solid #ead9c5;
+  margin-top: 6px;
+}

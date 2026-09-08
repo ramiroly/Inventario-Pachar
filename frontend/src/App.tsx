@@ -5,7 +5,7 @@ import { LoginPage } from "./pages/LoginPage";
 import { SetPasswordPage } from "./pages/SetPasswordPage";
 import { RecoverPasswordPage } from "./pages/RecoverPasswordPage";
 import { StockDashboardPage } from "./dashboards/stock/StockDashboardPage";
-import { DashboardComparativoPage } from "./pages/DashboardComparativoPage";
+import { ComparativoDashboardPage } from "./dashboards/comparativo/ComparativoDashboardPage";
 import { DashboardLiquidosPage } from "./pages/DashboardLiquidosPage";
 import { MovimientosFormPage } from "./pages/MovimientosFormPage";
 
@@ -45,7 +45,7 @@ export default function App() {
           path="/comparativo"
           element={
             <ProtectedRoute>
-              <DashboardComparativoPage />
+              <ComparativoDashboardPage />
             </ProtectedRoute>
           }
         />

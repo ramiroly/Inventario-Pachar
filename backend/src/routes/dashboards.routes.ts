@@ -174,24 +174,35 @@ dashboardsRouter.get("/stock", requireRole("socio"), async (req, res) => {
  * vía stock acumulado a esa fecha).
  */
 dashboardsRouter.get("/comparativo", requireRole("socio"), async (req, res) => {
-  const fechaCorte =
-    typeof req.query.fecha_corte === "string" ? req.query.fecha_corte : new Date().toISOString().slice(0, 10);
+  const [{ data: productos, error: prodError }, { data: movimientos, error: movError }, { data: lineas, error: lineasError }] =
+    await Promise.all([
+      supabase.from("productos_terminados").select("*"),
+      supabase.from("movimientos_terminados").select("*"),
+      supabase.from("lineas").select("*"),
+    ]);
+  if (prodError || movError || lineasError) {
+    return res.status(500).json({ error: (prodError ?? movError ?? lineasError)?.message });
+  }
+
+  const todosMovimientos = movimientos as MovimientoTerminado[];
+  // Sin fecha_corte explícito, se ancla a la fecha real más reciente cargada
+  // (no "hoy") — si el último movimiento real es del 31/08, comparar contra
+  // "hoy" siempre daría variación 0 porque no hay nada registrado después.
+  const fechaMaxima = todosMovimientos.reduce((max, m) => (m.fecha > max ? m.fecha : max), "0000-01-01");
+  const anclaFecha = fechaMaxima === "0000-01-01" ? new Date().toISOString().slice(0, 10) : fechaMaxima;
+
+  const fechaCorte = typeof req.query.fecha_corte === "string" ? req.query.fecha_corte : anclaFecha;
   const fechaAnterior =
     typeof req.query.fecha_corte_anterior === "string"
       ? req.query.fecha_corte_anterior
       : new Date(new Date(fechaCorte).getTime() - 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
 
-  const [{ data: productos, error: prodError }, { data: movimientos, error: movError }] = await Promise.all([
-    supabase.from("productos_terminados").select("*"),
-    supabase.from("movimientos_terminados").select("*").lte("fecha", fechaCorte),
-  ]);
-  if (prodError || movError) return res.status(500).json({ error: (prodError ?? movError)?.message });
-
   const productosPorId = new Map((productos as ProductoTerminado[]).map((p) => [p.id, p]));
+  const lineasPorId = new Map((lineas ?? []).map((l) => [l.id, l]));
 
   function stockAcumuladoHasta(fechaLimite: string) {
     const stock = new Map<string, number>();
-    for (const mov of movimientos as MovimientoTerminado[]) {
+    for (const mov of todosMovimientos) {
       if (mov.fecha > fechaLimite) continue;
       const signo = mov.tipo === "entrada" ? 1 : -1;
       stock.set(mov.producto_id, (stock.get(mov.producto_id) ?? 0) + signo * mov.cantidad);
@@ -208,15 +219,36 @@ dashboardsRouter.get("/comparativo", requireRole("socio"), async (req, res) => {
     return {
       producto_id: producto.id,
       linea_id: producto.linea_id,
+      linea: lineasPorId.get(producto.linea_id)?.nombre ?? "",
       descripcion: producto.descripcion,
       formato: producto.formato,
+      upb: producto.upb,
+      tipo_envase: producto.tipo_envase,
       stock_actual: actual,
       stock_anterior: anterior,
       variacion: actual - anterior,
     };
   });
 
-  res.json({ fecha_corte: fechaCorte, fecha_corte_anterior: fechaAnterior, detalle_por_formato: detallePorFormato });
+  const totalesPorLineaMap = new Map<string, { linea_id: string; nombre: string; stock_actual: number; stock_anterior: number }>();
+  for (const item of detallePorFormato) {
+    const entry = totalesPorLineaMap.get(item.linea_id) ?? {
+      linea_id: item.linea_id,
+      nombre: item.linea,
+      stock_actual: 0,
+      stock_anterior: 0,
+    };
+    entry.stock_actual += item.stock_actual;
+    entry.stock_anterior += item.stock_anterior;
+    totalesPorLineaMap.set(item.linea_id, entry);
+  }
+
+  res.json({
+    fecha_corte: fechaCorte,
+    fecha_corte_anterior: fechaAnterior,
+    detalle_por_formato: detallePorFormato,
+    totales_por_linea: [...totalesPorLineaMap.values()],
+  });
 });
 
 /**

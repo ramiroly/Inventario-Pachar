@@ -95,6 +95,33 @@ export interface DashboardStockResponse {
   salidas: { total: number; por_destino: SalidaPorDestino[] };
 }
 
+export interface DetalleFormatoComparativo {
+  producto_id: string;
+  linea_id: string;
+  linea: string;
+  descripcion: string;
+  formato: Formato;
+  upb: number;
+  tipo_envase: TipoEnvase;
+  stock_actual: number;
+  stock_anterior: number;
+  variacion: number;
+}
+
+export interface TotalPorLinea {
+  linea_id: string;
+  nombre: string;
+  stock_actual: number;
+  stock_anterior: number;
+}
+
+export interface DashboardComparativoResponse {
+  fecha_corte: string;
+  fecha_corte_anterior: string;
+  detalle_por_formato: DetalleFormatoComparativo[];
+  totales_por_linea: TotalPorLinea[];
+}
+
 export interface DashboardLiquidosResponse {
   tanques: Array<{
     tanque_id: string;
