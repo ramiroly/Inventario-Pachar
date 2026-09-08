@@ -25,12 +25,16 @@ const COLOR_ANTERIOR = "#8FC1E8";
 const COLOR_ACTUAL = "#0B3D6B";
 
 // Paleta dark/light específica del gráfico de detalle por línea
-// seleccionada — distinta de LC. El original solo definía estas 4 líneas
-// (únicas seleccionables ahí); el resto usa el mismo fallback que el HTML
-// original (`LINE_COLORS[linea] || {dark:'#A0501A', light:'#E8B084'}`).
+// seleccionada (dark = semana actual, light = semana anterior) — provista
+// por Ramiro para las 8 líneas, distinta de LC (que solo se usa para el
+// nombre de línea en la tabla ejecutiva) y del azul del gráfico principal.
 const LINE_COLORS_DETAIL: Record<string, { dark: string; light: string }> = {
   Matacuy: { dark: "#035B01", light: "#4FC150" },
   "Licor de Café": { dark: "#422302", light: "#A99C8D" },
+  Añejo: { dark: "#622211", light: "#B89B93" },
+  Reposado: { dark: "#117A65", light: "#76C5B8" },
+  Botanizado: { dark: "#009124", light: "#52C65E" },
+  "Salqa Verde": { dark: "#1E8449", light: "#85C4A0" },
   Cosecha: { dark: "#7D6608", light: "#C5B86A" },
   "Salqa Azul": { dark: "#0B3D6B", light: "#8FC1E8" },
 };
@@ -248,15 +252,20 @@ export function ComparativoDashboardPage() {
         <div className={styles.card} style={{ marginBottom: 18 }}>
           <div className={styles.cardT}>Stock por SKU, {data.fecha_corte_anterior} vs {data.fecha_corte}</div>
           <div className={styles.filters}>
-            {(lineasConMovimiento.length ? lineasConMovimiento : LN).map((l) => (
-              <button
-                key={l}
-                className={`${styles.fbtn} ${lineaSeleccionada === l ? styles.fbtnActive : ""}`}
-                onClick={() => setLineaSeleccionada(l)}
-              >
-                {l}
-              </button>
-            ))}
+            {(lineasConMovimiento.length ? lineasConMovimiento : LN).map((l) => {
+              const activa = lineaSeleccionada === l;
+              const col = detailColorsFor(l).dark;
+              return (
+                <button
+                  key={l}
+                  className={styles.fbtn}
+                  style={activa ? { background: col, borderColor: col, color: "#fff" } : undefined}
+                  onClick={() => setLineaSeleccionada(l)}
+                >
+                  {l}
+                </button>
+              );
+            })}
           </div>
           <div className={styles.leg}>
             <span>
