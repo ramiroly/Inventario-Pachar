@@ -19,7 +19,25 @@ const LC: Record<string, string> = {
   Botanizado: "#C9702E",
   "Licor de Café": "#7A3B12",
 };
-const COLOR_ANTERIOR = "#E8C9A0";
+// El gráfico principal usa azul plano (no por línea) para ambas barras —
+// LC (arriba) se usa solo para el nombre de línea en la tabla ejecutiva.
+const COLOR_ANTERIOR = "#8FC1E8";
+const COLOR_ACTUAL = "#0B3D6B";
+
+// Paleta dark/light específica del gráfico de detalle por línea
+// seleccionada — distinta de LC. El original solo definía estas 4 líneas
+// (únicas seleccionables ahí); el resto usa el mismo fallback que el HTML
+// original (`LINE_COLORS[linea] || {dark:'#A0501A', light:'#E8B084'}`).
+const LINE_COLORS_DETAIL: Record<string, { dark: string; light: string }> = {
+  Matacuy: { dark: "#035B01", light: "#4FC150" },
+  "Licor de Café": { dark: "#422302", light: "#A99C8D" },
+  Cosecha: { dark: "#7D6608", light: "#C5B86A" },
+  "Salqa Azul": { dark: "#0B3D6B", light: "#8FC1E8" },
+};
+const LINE_COLORS_DETAIL_FALLBACK = { dark: "#A0501A", light: "#E8B084" };
+function detailColorsFor(linea: string) {
+  return LINE_COLORS_DETAIL[linea] ?? LINE_COLORS_DETAIL_FALLBACK;
+}
 
 function cajasLabel(item: DetalleFormatoComparativo, stock: number): string {
   if (stock <= 0) return "0";
@@ -152,7 +170,7 @@ export function ComparativoDashboardPage() {
               {data.fecha_corte_anterior} (anterior)
             </span>
             <span>
-              <span className={styles.lsq} style={{ background: "#7A3B12" }} />
+              <span className={styles.lsq} style={{ background: COLOR_ACTUAL }} />
               {data.fecha_corte} (actual)
             </span>
           </div>
@@ -163,12 +181,12 @@ export function ComparativoDashboardPage() {
                 labels: LN,
                 datasets: [
                   { type: "bar" as const, label: data.fecha_corte_anterior, data: anteriorPorL, backgroundColor: COLOR_ANTERIOR, borderWidth: 0, order: 2 },
-                  { type: "bar" as const, label: data.fecha_corte, data: actualPorL, backgroundColor: LN.map((l) => LC[l]), borderWidth: 0, order: 2 },
+                  { type: "bar" as const, label: data.fecha_corte, data: actualPorL, backgroundColor: COLOR_ACTUAL, borderWidth: 0, order: 2 },
                   {
                     type: "line" as const,
                     label: "Tendencia anterior",
                     data: anteriorPorL,
-                    borderColor: "rgba(232,201,160,0.8)",
+                    borderColor: "rgba(143,193,232,0.7)",
                     borderDash: [6, 4],
                     borderWidth: 2,
                     pointRadius: 0,
@@ -180,11 +198,11 @@ export function ComparativoDashboardPage() {
                     type: "line" as const,
                     label: "Tendencia actual",
                     data: actualPorL,
-                    borderColor: "rgba(122,59,18,0.85)",
+                    borderColor: "rgba(11,61,107,0.85)",
                     borderDash: [6, 4],
                     borderWidth: 2,
                     pointRadius: 3,
-                    pointBackgroundColor: "#7A3B12",
+                    pointBackgroundColor: COLOR_ACTUAL,
                     fill: false,
                     tension: 0.3,
                     order: 0,
@@ -242,15 +260,17 @@ export function ComparativoDashboardPage() {
           </div>
           <div className={styles.leg}>
             <span>
-              <span className={styles.lsq} style={{ background: COLOR_ANTERIOR }} />
+              <span className={styles.lsq} style={{ background: lineaSeleccionada ? detailColorsFor(lineaSeleccionada).light : "#E8B084" }} />
               {data.fecha_corte_anterior}
             </span>
             <span>
-              <span className={styles.lsq} style={{ background: lineaSeleccionada ? LC[lineaSeleccionada] : "#A0501A" }} />
+              <span className={styles.lsq} style={{ background: lineaSeleccionada ? detailColorsFor(lineaSeleccionada).dark : "#A0501A" }} />
               {data.fecha_corte}
             </span>
           </div>
-          {lineaSeleccionada && <FormatDetailChart items={productosPorLinea(lineaSeleccionada)} colorActual={LC[lineaSeleccionada] ?? "#A0501A"} />}
+          {lineaSeleccionada && (
+            <FormatDetailChart items={productosPorLinea(lineaSeleccionada)} colors={detailColorsFor(lineaSeleccionada)} />
+          )}
         </div>
 
         <p className={styles.sec}>Tabla detallada de variación por producto</p>
@@ -323,7 +343,7 @@ export function ComparativoDashboardPage() {
   );
 }
 
-function FormatDetailChart({ items, colorActual }: { items: DetalleFormatoComparativo[]; colorActual: string }) {
+function FormatDetailChart({ items, colors }: { items: DetalleFormatoComparativo[]; colors: { dark: string; light: string } }) {
   const labels = items.map((i) => i.descripcion);
   const anterior = items.map((i) => i.stock_anterior);
   const actual = items.map((i) => i.stock_actual);
@@ -334,8 +354,8 @@ function FormatDetailChart({ items, colorActual }: { items: DetalleFormatoCompar
         data={{
           labels,
           datasets: [
-            { label: "Anterior", data: anterior, backgroundColor: COLOR_ANTERIOR, borderWidth: 0 },
-            { label: "Actual", data: actual, backgroundColor: colorActual, borderWidth: 0 },
+            { label: "Anterior", data: anterior, backgroundColor: colors.light, borderWidth: 0 },
+            { label: "Actual", data: actual, backgroundColor: colors.dark, borderWidth: 0 },
           ],
         }}
         options={{
