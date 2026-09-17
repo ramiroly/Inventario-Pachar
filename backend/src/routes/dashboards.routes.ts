@@ -255,42 +255,95 @@ dashboardsRouter.get("/comparativo", requireRole("socio"), async (req, res) => {
  * Dashboard 3: líquidos — tanques por línea (terminado + subproductos),
  * participación, comparativa semanal, variación neta por tanque.
  * Usa los dos snapshots más recientes por tanque (compararLiquido).
+ *
+ * La respuesta se agrupa por línea con `terminado` + `subs[]` (como el
+ * array DATA del HTML original), no como lista plana de tanques — el
+ * frontend arma una sección por línea a partir de esto.
  */
 dashboardsRouter.get("/liquidos", requireRole("socio"), async (_req, res) => {
-  const [{ data: tanques, error: tanquesError }, { data: snapshots, error: snapshotsError }] = await Promise.all([
-    supabase.from("tanques_liquidos").select("*"),
-    supabase.from("stock_liquidos_snapshot").select("*").order("fecha_corte", { ascending: false }),
-  ]);
-  if (tanquesError || snapshotsError) {
-    return res.status(500).json({ error: (tanquesError ?? snapshotsError)?.message });
+  const [{ data: tanques, error: tanquesError }, { data: snapshots, error: snapshotsError }, { data: lineas, error: lineasError }] =
+    await Promise.all([
+      supabase.from("tanques_liquidos").select("*"),
+      supabase.from("stock_liquidos_snapshot").select("*").order("fecha_corte", { ascending: false }),
+      supabase.from("lineas").select("*"),
+    ]);
+  if (tanquesError || snapshotsError || lineasError) {
+    return res.status(500).json({ error: (tanquesError ?? snapshotsError ?? lineasError)?.message });
   }
 
   const snapshotsPorTanque = new Map<string, typeof snapshots>();
+  const fechasCorte = new Set<string>();
   for (const snap of snapshots ?? []) {
     const lista = snapshotsPorTanque.get(snap.tanque_id) ?? [];
     lista.push(snap);
     snapshotsPorTanque.set(snap.tanque_id, lista);
+    fechasCorte.add(snap.fecha_corte);
+  }
+  const [fechaCorte, fechaAnterior] = [...fechasCorte].sort().reverse();
+
+  function litrosDe(tanqueId: string) {
+    const historicos = snapshotsPorTanque.get(tanqueId) ?? [];
+    return { actual: historicos[0]?.litros ?? 0, anterior: historicos[1]?.litros ?? 0 };
   }
 
-  const detalle = (tanques ?? []).map((tanque) => {
-    const historicos = snapshotsPorTanque.get(tanque.id) ?? [];
-    const actual = historicos[0]?.litros ?? 0;
-    const anterior = historicos[1]?.litros ?? 0;
-    const { delta, loteNuevo } = compararLiquido(actual, anterior);
+  const lineasPorId = new Map((lineas ?? []).map((l) => [l.id, l]));
+  const tanquesPorLinea = new Map<string, typeof tanques>();
+  for (const tanque of tanques ?? []) {
+    const lista = tanquesPorLinea.get(tanque.linea_id) ?? [];
+    lista.push(tanque);
+    tanquesPorLinea.set(tanque.linea_id, lista);
+  }
+
+  const resultado = [...tanquesPorLinea.entries()].map(([lineaId, tanquesLinea]) => {
+    const linea = lineasPorId.get(lineaId);
+    const terminadoTanque = tanquesLinea.find((t) => t.tipo === "terminado");
+    const subsTanques = tanquesLinea.filter((t) => t.tipo === "subproducto");
+
+    const terminado = terminadoTanque
+      ? (() => {
+          const { actual, anterior } = litrosDe(terminadoTanque.id);
+          const { delta, loteNuevo } = compararLiquido(actual, anterior);
+          return {
+            tanque_id: terminadoTanque.id,
+            nombre: terminadoTanque.nombre,
+            lote: terminadoTanque.lote,
+            litros_actual: actual,
+            litros_anterior: anterior,
+            capacidad_litros: terminadoTanque.capacidad_litros,
+            delta,
+            lote_nuevo: loteNuevo,
+          };
+        })()
+      : null;
+
+    const subs = subsTanques.map((t) => {
+      const { actual, anterior } = litrosDe(t.id);
+      const { delta, loteNuevo } = compararLiquido(actual, anterior);
+      return {
+        tanque_id: t.id,
+        nombre: t.nombre,
+        litros_actual: actual,
+        litros_anterior: anterior,
+        capacidad_litros: t.capacidad_litros,
+        delta,
+        lote_nuevo: loteNuevo,
+      };
+    });
 
     return {
-      tanque_id: tanque.id,
-      linea_id: tanque.linea_id,
-      nombre: tanque.nombre,
-      tipo: tanque.tipo,
-      capacidad_litros: tanque.capacidad_litros,
-      litros_actual: actual,
-      litros_anterior: anterior,
-      delta,
-      lote_nuevo: loteNuevo,
-      fecha_corte: historicos[0]?.fecha_corte ?? null,
+      linea_id: lineaId,
+      nombre: linea?.nombre ?? "",
+      color_dark: linea?.color_dark ?? null,
+      color_light: linea?.color_light ?? null,
+      color_sub: linea?.color_sub ?? null,
+      terminado,
+      subs,
     };
   });
 
-  res.json({ tanques: detalle });
+  res.json({
+    fecha_corte: fechaCorte ?? null,
+    fecha_corte_anterior: fechaAnterior ?? null,
+    lineas: resultado,
+  });
 });

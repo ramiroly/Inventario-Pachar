@@ -6,7 +6,7 @@ import { SetPasswordPage } from "./pages/SetPasswordPage";
 import { RecoverPasswordPage } from "./pages/RecoverPasswordPage";
 import { StockDashboardPage } from "./dashboards/stock/StockDashboardPage";
 import { ComparativoDashboardPage } from "./dashboards/comparativo/ComparativoDashboardPage";
-import { DashboardLiquidosPage } from "./pages/DashboardLiquidosPage";
+import { LiquidosDashboardPage } from "./dashboards/liquidos/LiquidosDashboardPage";
 import { MovimientosFormPage } from "./pages/MovimientosFormPage";
 
 // Links de invitación y recuperación de contraseña de Supabase redirigen acá
@@ -53,7 +53,7 @@ export default function App() {
           path="/liquidos"
           element={
             <ProtectedRoute>
-              <DashboardLiquidosPage />
+              <LiquidosDashboardPage />
             </ProtectedRoute>
           }
         />

@@ -1,0 +1,350 @@
+/* Porteo del <style> de INVENTARIO DE LIQUIDOS 1 DE SETIEMBRE.html (CSS
+   Modules para que las clases no choquen con los otros 2 dashboards). */
+.page {
+  font-family: "Segoe UI", Arial, sans-serif;
+  background: #eef5f3;
+  color: #1a2e28;
+  font-size: 13px;
+}
+.hdr {
+  background: linear-gradient(135deg, #0a3d2e, #0f6e56, #1d9e75);
+  color: #fff;
+  padding: 18px 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.hdr h1 {
+  font-size: 18px;
+  font-weight: 700;
+}
+.hdr p {
+  font-size: 11px;
+  opacity: 0.72;
+  margin-top: 2px;
+}
+.badges {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.badge {
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 8px;
+  padding: 7px 13px;
+  text-align: center;
+  min-width: 78px;
+}
+.badge strong {
+  display: block;
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.1;
+}
+.badge span {
+  font-size: 10px;
+  opacity: 0.75;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.badgeOk {
+  background: rgba(80, 200, 140, 0.22);
+}
+.badgeUp {
+  background: rgba(40, 180, 120, 0.3);
+}
+.badgeDown {
+  background: rgba(220, 80, 60, 0.22);
+}
+.wrap {
+  padding: 18px 32px 32px;
+  max-width: 1500px;
+  margin: 0 auto;
+}
+.sec {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: #0f6e56;
+  border-left: 3px solid #1d9e75;
+  padding-left: 8px;
+  margin: 0 0 14px;
+}
+.kgrid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 11px;
+  margin-bottom: 16px;
+}
+.kpi {
+  background: #fff;
+  border-radius: 10px;
+  padding: 12px 14px;
+  border-top: 4px solid #1d9e75;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+.kpiRed {
+  border-top-color: #c0392b;
+}
+.kpiAmb {
+  border-top-color: #d4811a;
+}
+.kpiBlu {
+  border-top-color: #1a5276;
+}
+.kpiGrn {
+  border-top-color: #0f6e56;
+}
+.kl {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: #6b7280;
+  margin-bottom: 3px;
+}
+.kv {
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1;
+}
+.kvRed {
+  color: #c0392b;
+}
+.kvGrn {
+  color: #0f6e56;
+}
+.kvAmb {
+  color: #d4811a;
+}
+.kvBlu {
+  color: #1a5276;
+}
+.kd {
+  font-size: 10px;
+  margin-top: 3px;
+  color: #9ca3af;
+}
+.alertBar {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-bottom: 16px;
+  font-size: 11px;
+}
+.alertTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 6px;
+}
+.atag {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 20px;
+}
+.atagRed {
+  background: #fee2e2;
+  color: #991b1b;
+}
+.atagAmber {
+  background: #fef3c7;
+  color: #92400e;
+}
+.atagGreen {
+  background: #d1fae5;
+  color: #065f46;
+}
+.atagBlue {
+  background: #dbeafe;
+  color: #1e40af;
+}
+.donutKpi {
+  background: #fff;
+  border-radius: 10px;
+  border: 0.5px solid #d1e7d8;
+  padding: 16px 20px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 28px;
+}
+.lineaSection {
+  background: #fff;
+  border-radius: 12px;
+  border: 0.5px solid #d1e7d8;
+  margin-bottom: 14px;
+  overflow: hidden;
+}
+.lineaHdr {
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.lineaHdrTitle {
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+}
+.lineaBody {
+  padding: 14px 16px 16px;
+}
+.tankGroupRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.tankGroupSep {
+  width: 1px;
+  background: #e5e7eb;
+  align-self: stretch;
+  margin: 0 4px;
+  flex-shrink: 0;
+}
+.subLabel {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #9ca3af;
+  margin-bottom: 6px;
+}
+.subTanks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.tankCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+.tankName {
+  font-size: 9px;
+  font-weight: 700;
+  color: #374151;
+  text-align: center;
+  line-height: 1.3;
+}
+.tankLitros {
+  font-size: 11px;
+  font-weight: 700;
+  color: #1a2e28;
+  text-align: center;
+}
+.tankCap {
+  font-size: 9px;
+  color: #9ca3af;
+  text-align: center;
+}
+.tankBadge {
+  font-size: 8px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 20px;
+  text-align: center;
+}
+.g2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+.card {
+  background: #fff;
+  border-radius: 10px;
+  padding: 16px 18px;
+  border: 0.5px solid #d1e7d8;
+}
+.cardT {
+  font-size: 11px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 12px;
+}
+.leg {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 9px;
+}
+.leg span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  color: #6b7280;
+}
+.lsq {
+  width: 10px;
+  height: 7px;
+  border-radius: 2px;
+  flex-shrink: 0;
+  display: inline-block;
+}
+.footer {
+  text-align: center;
+  padding: 10px;
+  font-size: 10px;
+  color: #9ca3af;
+  border-top: 1px solid #d1e7d8;
+  margin-top: 4px;
+}
+.tooltipBox {
+  background: #1a2e28;
+  color: #fff;
+  border-radius: 10px;
+  padding: 12px 15px;
+  font-size: 11px;
+  line-height: 1.6;
+  min-width: 200px;
+  max-width: 270px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.45);
+  white-space: normal;
+}
+.fttTitle {
+  font-weight: 700;
+  font-size: 12px;
+  margin-bottom: 7px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  line-height: 1.4;
+}
+.fttRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 2px;
+}
+.fttLbl {
+  color: rgba(255, 255, 255, 0.6);
+  flex-shrink: 0;
+}
+.fttVal {
+  font-weight: 700;
+}
+.fttDiv {
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+  margin: 6px 0;
+}
+.fttUp {
+  color: #6ee7b7;
+  font-weight: 700;
+}
+.fttDown {
+  color: #fca5a5;
+  font-weight: 700;
+}
+.fttNew {
+  color: #93c5fd;
+  font-weight: 700;
+}

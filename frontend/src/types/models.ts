@@ -122,17 +122,32 @@ export interface DashboardComparativoResponse {
   totales_por_linea: TotalPorLinea[];
 }
 
+export interface TanqueDashboard {
+  tanque_id: string;
+  nombre: string;
+  litros_actual: number;
+  litros_anterior: number;
+  capacidad_litros: number | null;
+  delta: number;
+  lote_nuevo: boolean;
+}
+
+export interface TanqueTerminadoDashboard extends TanqueDashboard {
+  lote: string | null;
+}
+
+export interface LineaLiquidos {
+  linea_id: string;
+  nombre: string;
+  color_dark: string | null;
+  color_light: string | null;
+  color_sub: string | null;
+  terminado: TanqueTerminadoDashboard | null;
+  subs: TanqueDashboard[];
+}
+
 export interface DashboardLiquidosResponse {
-  tanques: Array<{
-    tanque_id: string;
-    linea_id: string;
-    nombre: string;
-    tipo: TipoTanque;
-    capacidad_litros: number | null;
-    litros_actual: number;
-    litros_anterior: number;
-    delta: number;
-    lote_nuevo: boolean;
-    fecha_corte: string | null;
-  }>;
+  fecha_corte: string | null;
+  fecha_corte_anterior: string | null;
+  lineas: LineaLiquidos[];
 }
