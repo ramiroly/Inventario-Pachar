@@ -18,6 +18,7 @@ const origenes = (process.env.CORS_ORIGIN ?? "http://localhost:5173")
 app.use(cors({ origin: origenes }));
 app.use(express.json());
 
+app.get("/", (_req, res) => res.json({ servicio: "Inventario Pachar API", ok: true }));
 app.get("/health", (_req, res) => res.json({ ok: true }));
 
 app.use("/lineas", lineasRouter);
