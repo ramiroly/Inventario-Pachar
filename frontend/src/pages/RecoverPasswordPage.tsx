@@ -1,5 +1,7 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { AuthLayout } from "../components/AuthLayout";
+import styles from "../components/AuthLayout.module.css";
 import { supabase } from "../lib/supabaseClient";
 
 /**
@@ -47,46 +49,74 @@ export function RecoverPasswordPage() {
     navigate("/set-password");
   }
 
-  return (
-    <div style={{ maxWidth: 320, margin: "4rem auto" }}>
-      <h1>Recuperar contraseña</h1>
+  const volver = (
+    <Link to="/login" className={styles.link}>
+      Volver a iniciar sesión
+    </Link>
+  );
 
-      {paso === "pedir-codigo" && (
-        <form onSubmit={handlePedirCodigo} style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-          <p>Te vamos a enviar un código a tu correo.</p>
-          <input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-          <button type="submit" disabled={enviando}>
+  if (paso === "pedir-codigo") {
+    return (
+      <AuthLayout
+        titulo="Recuperar contraseña"
+        subtitulo="Te enviaremos un código a tu correo para que puedas crear una contraseña nueva."
+        pie={volver}
+      >
+        <form onSubmit={handlePedirCodigo} className={styles.form}>
+          <div className={styles.field}>
+            <label htmlFor="email" className={styles.label}>
+              Correo electrónico
+            </label>
+            <input
+              id="email"
+              className={styles.input}
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              autoComplete="email"
+              required
+            />
+          </div>
+          {error && <p className={styles.error}>{error}</p>}
+          <button type="submit" className={styles.button} disabled={enviando}>
             {enviando ? "Enviando..." : "Enviar código"}
           </button>
-          {error && <p style={{ color: "crimson" }}>{error}</p>}
         </form>
-      )}
+      </AuthLayout>
+    );
+  }
 
-      {paso === "verificar-codigo" && (
-        <form onSubmit={handleVerificarCodigo} style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-          <p>
-            Ingresa el código que llegó a <strong>{email}</strong>.
-          </p>
+  return (
+    <AuthLayout
+      titulo="Revisa tu correo"
+      subtitulo={
+        <>
+          Ingresa el código que enviamos a <strong>{email}</strong>.
+        </>
+      }
+      pie={volver}
+    >
+      <form onSubmit={handleVerificarCodigo} className={styles.form}>
+        <div className={styles.field}>
+          <label htmlFor="codigo" className={styles.label}>
+            Código
+          </label>
           <input
+            id="codigo"
+            className={`${styles.input} ${styles.inputCode}`}
             type="text"
             inputMode="numeric"
-            placeholder="Código"
+            autoComplete="one-time-code"
             value={codigo}
             onChange={(e) => setCodigo(e.target.value)}
             required
           />
-          <button type="submit" disabled={enviando}>
-            {enviando ? "Verificando..." : "Verificar código"}
-          </button>
-          {error && <p style={{ color: "crimson" }}>{error}</p>}
-        </form>
-      )}
-    </div>
+        </div>
+        {error && <p className={styles.error}>{error}</p>}
+        <button type="submit" className={styles.button} disabled={enviando}>
+          {enviando ? "Verificando..." : "Verificar código"}
+        </button>
+      </form>
+    </AuthLayout>
   );
 }

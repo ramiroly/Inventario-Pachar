@@ -1,0 +1,19 @@
+/* Identidad de Destilería Andina: negro y crema del logo. Solo se usa en el
+   "chrome" del sistema (login, menú, formularios); cada dashboard conserva su
+   propia paleta. */
+:root {
+  --pachar-black: #0a0a0a;
+  --pachar-cream: #ededE5;
+  --pachar-paper: #fbfaf6;
+  --pachar-line: #d6d4c7;
+  --pachar-ink: #1b1b18;
+  --pachar-muted: #6b6a5f;
+  --pachar-focus: #2d6a4f;
+  --pachar-danger: #a4312a;
+  --pachar-font-display: Georgia, "Times New Roman", serif;
+  --pachar-font-body: "Segoe UI", system-ui, -apple-system, Arial, sans-serif;
+}
+
+body {
+  margin: 0;
+}

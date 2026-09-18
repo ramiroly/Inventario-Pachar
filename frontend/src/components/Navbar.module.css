@@ -1,0 +1,134 @@
+.bar,
+.bar *,
+.bar *::before,
+.bar *::after {
+  box-sizing: border-box;
+}
+.bar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--pachar-black);
+  border-bottom: 1px solid #262622;
+  font-family: var(--pachar-font-body);
+}
+.inner {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  height: 64px;
+  padding: 0 28px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+.logo {
+  height: 38px;
+  width: auto;
+  display: block;
+}
+
+.links {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.link {
+  padding: 8px 14px;
+  border-radius: 8px;
+  color: rgba(237, 237, 229, 0.7);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s;
+}
+.link:hover {
+  color: var(--pachar-cream);
+  background: rgba(237, 237, 229, 0.08);
+}
+.active,
+.active:hover {
+  color: #fff;
+  background: rgba(237, 237, 229, 0.16);
+}
+
+.user {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.email {
+  color: rgba(237, 237, 229, 0.6);
+  font-size: 13px;
+}
+.role {
+  padding: 3px 9px;
+  border: 1px solid rgba(237, 237, 229, 0.45);
+  border-radius: 999px;
+  color: var(--pachar-cream);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+.roleAdmin {
+  background: var(--pachar-cream);
+  border-color: var(--pachar-cream);
+  color: var(--pachar-black);
+}
+.salir {
+  padding: 7px 14px;
+  border: 1px solid rgba(237, 237, 229, 0.35);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--pachar-cream);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.salir:hover {
+  background: var(--pachar-cream);
+  color: var(--pachar-black);
+}
+
+@media (max-width: 960px) {
+  .email {
+    display: none;
+  }
+  .inner {
+    gap: 16px;
+    padding: 0 16px;
+  }
+}
+
+@media (max-width: 720px) {
+  .inner {
+    flex-wrap: wrap;
+    height: auto;
+    gap: 8px 12px;
+    padding: 10px 14px 8px;
+  }
+  .logo {
+    height: 32px;
+  }
+  .user {
+    order: 2;
+  }
+  .links {
+    order: 3;
+    width: 100%;
+    overflow-x: auto;
+    padding-bottom: 2px;
+    scrollbar-width: none;
+  }
+  .links::-webkit-scrollbar {
+    display: none;
+  }
+}

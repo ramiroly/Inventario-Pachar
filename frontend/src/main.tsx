@@ -16,6 +16,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import App from "./App";
+import "./theme/brand.css";
 
 // Controladores explícitos: el componente genérico Chart (Comparativo mezcla
 // barras y líneas) no los registra solo, y en el build de producción el
