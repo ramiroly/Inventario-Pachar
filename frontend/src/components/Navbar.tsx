@@ -21,6 +21,11 @@ export function Navbar() {
         </NavLink>
 
         <nav className={styles.links} aria-label="Principal">
+          {rol === "admin" && (
+            <NavLink to="/movimientos/nuevo" className={claseLink}>
+              Cargar movimiento
+            </NavLink>
+          )}
           <NavLink to="/" end className={claseLink}>
             Stock
           </NavLink>
@@ -30,11 +35,6 @@ export function Navbar() {
           <NavLink to="/liquidos" className={claseLink}>
             Líquidos
           </NavLink>
-          {rol === "admin" && (
-            <NavLink to="/movimientos/nuevo" className={claseLink}>
-              Cargar movimiento
-            </NavLink>
-          )}
         </nav>
 
         <div className={styles.user}>
