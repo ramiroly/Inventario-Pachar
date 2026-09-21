@@ -24,6 +24,19 @@ productosRouter.get("/", requireRole("socio"), async (req, res) => {
   res.json(data);
 });
 
+// Stock actual por producto (entradas - salidas, incluyendo ajustes). Lo usa el
+// formulario de ajuste por conteo fisico para mostrar la diferencia.
+productosRouter.get("/stock", requireRole("socio"), async (_req, res) => {
+  const { data, error } = await supabase.from("movimientos_terminados").select("producto_id, tipo, cantidad");
+  if (error) return res.status(500).json({ error: error.message });
+
+  const stock: Record<string, number> = {};
+  for (const mov of data) {
+    stock[mov.producto_id] = (stock[mov.producto_id] ?? 0) + (mov.tipo === "entrada" ? 1 : -1) * mov.cantidad;
+  }
+  res.json(stock);
+});
+
 productosRouter.post("/", requireRole("admin"), async (req, res) => {
   const parsed = productoSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });

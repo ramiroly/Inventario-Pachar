@@ -36,6 +36,8 @@ export interface MovimientoTerminado {
   tipo: TipoMovimiento;
   cantidad: number;
   destino: string | null;
+  es_ajuste: boolean;
+  motivo: string | null;
 }
 
 export type TipoTanque = "terminado" | "subproducto";

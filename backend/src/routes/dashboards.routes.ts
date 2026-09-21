@@ -53,7 +53,8 @@ dashboardsRouter.get("/stock", requireRole("socio"), async (req, res) => {
     const signo = mov.tipo === "entrada" ? 1 : -1;
     stockPorProducto.set(mov.producto_id, (stockPorProducto.get(mov.producto_id) ?? 0) + signo * mov.cantidad);
 
-    if (mov.tipo === "salida" && mov.fecha >= desde && mov.fecha <= hasta) {
+    // Los ajustes por conteo fisico corrigen el stock pero no son despachos.
+    if (mov.tipo === "salida" && !mov.es_ajuste && mov.fecha >= desde && mov.fecha <= hasta) {
       salidasPeriodoPorProducto.set(
         mov.producto_id,
         (salidasPeriodoPorProducto.get(mov.producto_id) ?? 0) + mov.cantidad

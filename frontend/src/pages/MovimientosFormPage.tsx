@@ -1,9 +1,17 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import logoCerros from "../assets/logo-cerros.png";
 import { api } from "../lib/api";
 import { DESTINOS_HABITUALES } from "../lib/destinos";
-import type { Linea, ProductoTerminado, TipoMovimiento } from "../types/models";
+import type { Linea, ProductoTerminado } from "../types/models";
 import styles from "./movimientos.module.css";
+
+type Modo = "salida" | "entrada" | "ajuste";
+
+const MODOS: { id: Modo; etiqueta: string }[] = [
+  { id: "salida", etiqueta: "Salida" },
+  { id: "entrada", etiqueta: "Entrada" },
+  { id: "ajuste", etiqueta: "Ajuste" },
+];
 
 const ORDEN_LINEAS = ["Matacuy", "Salqa Azul", "Salqa Verde", "Añejo", "Reposado", "Cosecha", "Botanizado", "Licor de Café"];
 
@@ -24,26 +32,37 @@ function mensajeError(e: unknown): string {
   return texto;
 }
 
+const formatoUnidades = (n: number) => n.toLocaleString("es-PE");
+const conSigno = (n: number) => (n > 0 ? `+${formatoUnidades(n)}` : formatoUnidades(n));
+
 export function MovimientosFormPage() {
   const [productos, setProductos] = useState<ProductoTerminado[]>([]);
   const [lineas, setLineas] = useState<Linea[]>([]);
+  const [stockPorProducto, setStockPorProducto] = useState<Record<string, number>>({});
   const [productoId, setProductoId] = useState("");
   const [fecha, setFecha] = useState(() => new Date().toISOString().slice(0, 10));
-  const [tipo, setTipo] = useState<TipoMovimiento>("salida");
+  const [modo, setModo] = useState<Modo>("salida");
   const [cantidad, setCantidad] = useState("");
+  const [conteo, setConteo] = useState("");
+  const [motivo, setMotivo] = useState("");
   const [destino, setDestino] = useState<string>(DESTINOS_HABITUALES[0]);
   const [guardando, setGuardando] = useState(false);
   const [mensaje, setMensaje] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const cargarStock = useCallback(
+    () => api.get<Record<string, number>>("/productos/stock").then(setStockPorProducto),
+    []
+  );
+
   useEffect(() => {
-    Promise.all([api.get<ProductoTerminado[]>("/productos"), api.get<Linea[]>("/lineas")])
+    Promise.all([api.get<ProductoTerminado[]>("/productos"), api.get<Linea[]>("/lineas"), cargarStock()])
       .then(([p, l]) => {
         setProductos(p);
         setLineas(l);
       })
       .catch((e) => setError(mensajeError(e)));
-  }, []);
+  }, [cargarStock]);
 
   const grupos = useMemo(
     () =>
@@ -55,30 +74,67 @@ export function MovimientosFormPage() {
   );
 
   const productoSel = productos.find((p) => p.id === productoId);
+  const stockSistema = productoSel ? stockPorProducto[productoSel.id] ?? 0 : null;
+  const conteoNum = conteo === "" ? null : Number(conteo);
+  const diferencia = conteoNum !== null && stockSistema !== null ? conteoNum - stockSistema : null;
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
-    setMensaje(null);
+  async function guardarAjuste() {
+    if (!productoSel || stockSistema === null) {
+      setError("Selecciona un producto.");
+      return;
+    }
+    if (conteoNum === null || !Number.isInteger(conteoNum) || conteoNum < 0) {
+      setError("Ingresa el conteo físico real (0 o más unidades).");
+      return;
+    }
+    const dif = conteoNum - stockSistema;
+    if (dif === 0) {
+      setError("El conteo coincide con el sistema: no hay nada que ajustar.");
+      return;
+    }
+    await api.post("/movimientos", {
+      producto_id: productoSel.id,
+      fecha,
+      tipo: dif > 0 ? "entrada" : "salida",
+      cantidad: Math.abs(dif),
+      destino: null,
+      es_ajuste: true,
+      motivo: motivo.trim() || null,
+    });
+    setMensaje(
+      `Ajuste registrado: ${productoSel.descripcion} pasó de ${formatoUnidades(stockSistema)} a ${formatoUnidades(conteoNum)} u. (${conSigno(dif)} u.).`
+    );
+    setConteo("");
+    setMotivo("");
+  }
+
+  async function guardarMovimiento() {
     const unidades = Number(cantidad);
     if (!Number.isInteger(unidades) || unidades < 1) {
       setError("Ingresa una cantidad válida (mayor a 0).");
       return;
     }
+    await api.post("/movimientos", {
+      producto_id: productoId,
+      fecha,
+      tipo: modo,
+      cantidad: unidades,
+      destino: modo === "salida" ? destino : null,
+    });
+    const accion = modo === "salida" ? "Salida" : "Entrada";
+    setMensaje(`${accion} registrada: ${formatoUnidades(unidades)} u. de ${productoSel?.descripcion ?? "el producto"}.`);
+    setCantidad("");
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setMensaje(null);
     setGuardando(true);
     try {
-      await api.post("/movimientos", {
-        producto_id: productoId,
-        fecha,
-        tipo,
-        cantidad: unidades,
-        destino: tipo === "salida" ? destino : null,
-      });
-      const accion = tipo === "salida" ? "Salida" : "Entrada";
-      setMensaje(
-        `${accion} registrada: ${unidades.toLocaleString("es-PE")} u. de ${productoSel?.descripcion ?? "el producto"}.`
-      );
-      setCantidad("");
+      if (modo === "ajuste") await guardarAjuste();
+      else await guardarMovimiento();
+      await cargarStock();
     } catch (err) {
       setError(mensajeError(err));
     } finally {
@@ -99,28 +155,35 @@ export function MovimientosFormPage() {
             <li>
               <strong>Salida:</strong> descuenta del stock y requiere un destino.
             </li>
+            <li>
+              <strong>Ajuste:</strong> corrige el stock según tu conteo físico. No cuenta como despacho.
+            </li>
             <li>Las cantidades siempre se registran en unidades sueltas, no en cajas.</li>
           </ul>
         </aside>
 
         <main className={styles.main}>
           <h1 className={styles.titulo}>Cargar movimiento</h1>
-          <p className={styles.subtitulo}>Registra una entrada o una salida de productos terminados.</p>
+          <p className={styles.subtitulo}>Registra una entrada, una salida o un ajuste de productos terminados.</p>
 
           <form onSubmit={handleSubmit} className={styles.form}>
             <div className={styles.field}>
               <span className={styles.label}>Tipo de movimiento</span>
               <div className={styles.segmented} role="radiogroup" aria-label="Tipo de movimiento">
-                {(["salida", "entrada"] as const).map((t) => (
+                {MODOS.map((m) => (
                   <button
-                    key={t}
+                    key={m.id}
                     type="button"
                     role="radio"
-                    aria-checked={tipo === t}
-                    className={tipo === t ? `${styles.segment} ${styles.segmentActive}` : styles.segment}
-                    onClick={() => setTipo(t)}
+                    aria-checked={modo === m.id}
+                    className={modo === m.id ? `${styles.segment} ${styles.segmentActive}` : styles.segment}
+                    onClick={() => {
+                      setModo(m.id);
+                      setError(null);
+                      setMensaje(null);
+                    }}
                   >
-                    {t === "salida" ? "Salida" : "Entrada"}
+                    {m.etiqueta}
                   </button>
                 ))}
               </div>
@@ -173,25 +236,44 @@ export function MovimientosFormPage() {
                   required
                 />
               </div>
-              <div className={styles.field}>
-                <label htmlFor="cantidad" className={styles.label}>
-                  Cantidad (unidades)
-                </label>
-                <input
-                  id="cantidad"
-                  className={styles.input}
-                  type="text"
-                  inputMode="numeric"
-                  autoComplete="off"
-                  placeholder="Ej. 1200"
-                  value={cantidad}
-                  onChange={(e) => setCantidad(e.target.value.replace(/\D/g, ""))}
-                  required
-                />
-              </div>
+              {modo === "ajuste" ? (
+                <div className={styles.field}>
+                  <label htmlFor="conteo" className={styles.label}>
+                    Conteo físico real (unidades)
+                  </label>
+                  <input
+                    id="conteo"
+                    className={styles.input}
+                    type="text"
+                    inputMode="numeric"
+                    autoComplete="off"
+                    placeholder="Ej. 240"
+                    value={conteo}
+                    onChange={(e) => setConteo(e.target.value.replace(/\D/g, ""))}
+                    required
+                  />
+                </div>
+              ) : (
+                <div className={styles.field}>
+                  <label htmlFor="cantidad" className={styles.label}>
+                    Cantidad (unidades)
+                  </label>
+                  <input
+                    id="cantidad"
+                    className={styles.input}
+                    type="text"
+                    inputMode="numeric"
+                    autoComplete="off"
+                    placeholder="Ej. 1200"
+                    value={cantidad}
+                    onChange={(e) => setCantidad(e.target.value.replace(/\D/g, ""))}
+                    required
+                  />
+                </div>
+              )}
             </div>
 
-            {tipo === "salida" && (
+            {modo === "salida" && (
               <div className={styles.field}>
                 <label htmlFor="destino" className={styles.label}>
                   Destino
@@ -211,11 +293,50 @@ export function MovimientosFormPage() {
               </div>
             )}
 
+            {modo === "ajuste" && (
+              <>
+                <div className={styles.resumen} aria-live="polite">
+                  <div>
+                    <span>Stock en el sistema</span>
+                    <strong>{stockSistema === null ? "—" : `${formatoUnidades(stockSistema)} u.`}</strong>
+                  </div>
+                  <div>
+                    <span>Diferencia</span>
+                    <strong
+                      className={
+                        diferencia === null || diferencia === 0
+                          ? undefined
+                          : diferencia > 0
+                            ? styles.difPositiva
+                            : styles.difNegativa
+                      }
+                    >
+                      {diferencia === null ? "—" : diferencia === 0 ? "Sin diferencia" : `${conSigno(diferencia)} u.`}
+                    </strong>
+                  </div>
+                </div>
+                <div className={styles.field}>
+                  <label htmlFor="motivo" className={styles.label}>
+                    Motivo (opcional)
+                  </label>
+                  <input
+                    id="motivo"
+                    className={styles.input}
+                    type="text"
+                    maxLength={200}
+                    placeholder="Ej. conteo de fin de mes, rotura"
+                    value={motivo}
+                    onChange={(e) => setMotivo(e.target.value)}
+                  />
+                </div>
+              </>
+            )}
+
             {mensaje && <p className={styles.success}>{mensaje}</p>}
             {error && <p className={styles.error}>{error}</p>}
 
             <button type="submit" className={styles.button} disabled={guardando}>
-              {guardando ? "Guardando..." : "Guardar movimiento"}
+              {guardando ? "Guardando..." : modo === "ajuste" ? "Guardar ajuste" : "Guardar movimiento"}
             </button>
           </form>
         </main>

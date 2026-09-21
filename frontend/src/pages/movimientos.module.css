@@ -123,7 +123,7 @@
 
 .segmented {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, 1fr);
   gap: 6px;
   padding: 5px;
   border-radius: 12px;
@@ -148,6 +148,31 @@
 .segmentActive:hover {
   background: var(--pachar-black);
   color: var(--pachar-cream);
+}
+
+.resumen {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid var(--pachar-line);
+  border-radius: 12px;
+  background: #fff;
+}
+.resumen span {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--pachar-muted);
+  font-size: 12.5px;
+}
+.resumen strong {
+  font-size: 20px;
+}
+.difPositiva {
+  color: var(--pachar-focus);
+}
+.difNegativa {
+  color: var(--pachar-danger);
 }
 
 .button {

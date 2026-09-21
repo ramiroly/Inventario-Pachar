@@ -12,10 +12,20 @@ const movimientoSchema = z
     tipo: z.enum(["entrada", "salida"]),
     cantidad: z.number().int().positive(),
     destino: z.string().min(1).nullish(),
+    es_ajuste: z.boolean().default(false),
+    motivo: z.string().trim().max(200).nullish(),
   })
   .refine((m) => m.tipo === "salida" || !m.destino, {
     message: "destino solo aplica a movimientos de tipo salida",
     path: ["destino"],
+  })
+  .refine((m) => !m.es_ajuste || !m.destino, {
+    message: "un ajuste de inventario no lleva destino",
+    path: ["destino"],
+  })
+  .refine((m) => m.es_ajuste || !m.motivo, {
+    message: "el motivo solo aplica a ajustes de inventario",
+    path: ["motivo"],
   });
 
 movimientosRouter.get("/", requireRole("socio"), async (req, res) => {
