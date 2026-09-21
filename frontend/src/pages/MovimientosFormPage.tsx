@@ -30,7 +30,7 @@ export function MovimientosFormPage() {
   const [productoId, setProductoId] = useState("");
   const [fecha, setFecha] = useState(() => new Date().toISOString().slice(0, 10));
   const [tipo, setTipo] = useState<TipoMovimiento>("salida");
-  const [cantidad, setCantidad] = useState(1);
+  const [cantidad, setCantidad] = useState("");
   const [destino, setDestino] = useState<string>(DESTINOS_HABITUALES[0]);
   const [guardando, setGuardando] = useState(false);
   const [mensaje, setMensaje] = useState<string | null>(null);
@@ -60,18 +60,25 @@ export function MovimientosFormPage() {
     e.preventDefault();
     setError(null);
     setMensaje(null);
+    const unidades = Number(cantidad);
+    if (!Number.isInteger(unidades) || unidades < 1) {
+      setError("Ingresa una cantidad válida (mayor a 0).");
+      return;
+    }
     setGuardando(true);
     try {
       await api.post("/movimientos", {
         producto_id: productoId,
         fecha,
         tipo,
-        cantidad,
+        cantidad: unidades,
         destino: tipo === "salida" ? destino : null,
       });
       const accion = tipo === "salida" ? "Salida" : "Entrada";
-      setMensaje(`${accion} registrada: ${cantidad} u. de ${productoSel?.descripcion ?? "el producto"}.`);
-      setCantidad(1);
+      setMensaje(
+        `${accion} registrada: ${unidades.toLocaleString("es-PE")} u. de ${productoSel?.descripcion ?? "el producto"}.`
+      );
+      setCantidad("");
     } catch (err) {
       setError(mensajeError(err));
     } finally {
@@ -173,12 +180,12 @@ export function MovimientosFormPage() {
                 <input
                   id="cantidad"
                   className={styles.input}
-                  type="number"
+                  type="text"
                   inputMode="numeric"
-                  min={1}
-                  step={1}
+                  autoComplete="off"
+                  placeholder="Ej. 1200"
                   value={cantidad}
-                  onChange={(e) => setCantidad(Number(e.target.value))}
+                  onChange={(e) => setCantidad(e.target.value.replace(/\D/g, ""))}
                   required
                 />
               </div>
