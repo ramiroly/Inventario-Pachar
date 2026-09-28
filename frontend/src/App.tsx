@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import { Navbar } from "./components/Navbar";
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import { useAuth } from "./lib/useAuth";
 import { LoginPage } from "./pages/LoginPage";
 import { SetPasswordPage } from "./pages/SetPasswordPage";
 import { RecoverPasswordPage } from "./pages/RecoverPasswordPage";
@@ -8,6 +9,14 @@ import { StockDashboardPage } from "./dashboards/stock/StockDashboardPage";
 import { ComparativoDashboardPage } from "./dashboards/comparativo/ComparativoDashboardPage";
 import { LiquidosDashboardPage } from "./dashboards/liquidos/LiquidosDashboardPage";
 import { MovimientosFormPage } from "./pages/MovimientosFormPage";
+import { MovimientosListPage } from "./pages/MovimientosListPage";
+
+// Página de entrada ("/"): a los admin los lleva directo a Cargar movimiento
+// (su primera tarea del día); a los socios, a Stock.
+function Inicio() {
+  const { rol } = useAuth();
+  return <Navigate to={rol === "admin" ? "/movimientos/nuevo" : "/stock"} replace />;
+}
 
 // Links de invitación y recuperación de contraseña de Supabase redirigen acá
 // con el token en el hash (#access_token=...&type=recovery) o en la query
@@ -37,6 +46,14 @@ export default function App() {
           path="/"
           element={
             <ProtectedRoute>
+              <Inicio />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/stock"
+          element={
+            <ProtectedRoute>
               <StockDashboardPage />
             </ProtectedRoute>
           }
@@ -62,6 +79,14 @@ export default function App() {
           element={
             <ProtectedRoute rolRequerido="admin">
               <MovimientosFormPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/movimientos"
+          element={
+            <ProtectedRoute rolRequerido="admin">
+              <MovimientosListPage />
             </ProtectedRoute>
           }
         />

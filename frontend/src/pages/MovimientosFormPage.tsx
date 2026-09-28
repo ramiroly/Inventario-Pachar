@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import logoCerros from "../assets/logo-cerros.png";
 import { api } from "../lib/api";
 import { DESTINOS_HABITUALES } from "../lib/destinos";
@@ -43,6 +44,7 @@ export function MovimientosFormPage() {
   const [fecha, setFecha] = useState(() => new Date().toISOString().slice(0, 10));
   const [modo, setModo] = useState<Modo>("salida");
   const [cantidad, setCantidad] = useState("");
+  const [numeroDocumento, setNumeroDocumento] = useState("");
   const [conteo, setConteo] = useState("");
   const [motivo, setMotivo] = useState("");
   const [destino, setDestino] = useState<string>(DESTINOS_HABITUALES[0]);
@@ -120,6 +122,7 @@ export function MovimientosFormPage() {
       tipo: modo,
       cantidad: unidades,
       destino: modo === "salida" ? destino : null,
+      numero_documento: numeroDocumento.trim() || null,
     });
     const accion = modo === "salida" ? "Salida" : "Entrada";
     setMensaje(`${accion} registrada: ${formatoUnidades(unidades)} u. de ${productoSel?.descripcion ?? "el producto"}.`);
@@ -164,7 +167,12 @@ export function MovimientosFormPage() {
 
         <main className={styles.main}>
           <h1 className={styles.titulo}>Cargar movimiento</h1>
-          <p className={styles.subtitulo}>Registra una entrada, una salida o un ajuste de productos terminados.</p>
+          <p className={styles.subtitulo}>
+            Registra una entrada, una salida o un ajuste de productos terminados.{" "}
+            <Link to="/movimientos" className={styles.link}>
+              Ver listado y comprobantes
+            </Link>
+          </p>
 
           <form onSubmit={handleSubmit} className={styles.form}>
             <div className={styles.field}>
@@ -272,6 +280,26 @@ export function MovimientosFormPage() {
                 </div>
               )}
             </div>
+
+            {modo !== "ajuste" && (
+              <div className={styles.field}>
+                <label htmlFor="numeroDocumento" className={styles.label}>
+                  {modo === "salida" ? "N° de guía de remisión (opcional)" : "N° de producción / orden (opcional)"}
+                </label>
+                <input
+                  id="numeroDocumento"
+                  className={styles.input}
+                  type="text"
+                  autoComplete="off"
+                  placeholder="Ej. 200"
+                  value={numeroDocumento}
+                  onChange={(e) => setNumeroDocumento(e.target.value)}
+                />
+                <p className={styles.hint}>
+                  Usa el mismo número en varios productos para agruparlos en un solo comprobante.
+                </p>
+              </div>
+            )}
 
             {modo === "salida" && (
               <div className={styles.field}>

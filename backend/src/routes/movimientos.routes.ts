@@ -14,6 +14,7 @@ const movimientoSchema = z
     destino: z.string().min(1).nullish(),
     es_ajuste: z.boolean().default(false),
     motivo: z.string().trim().max(200).nullish(),
+    numero_documento: z.string().trim().min(1).max(50).nullish(),
   })
   .refine((m) => m.tipo === "salida" || !m.destino, {
     message: "destino solo aplica a movimientos de tipo salida",
@@ -26,6 +27,10 @@ const movimientoSchema = z
   .refine((m) => m.es_ajuste || !m.motivo, {
     message: "el motivo solo aplica a ajustes de inventario",
     path: ["motivo"],
+  })
+  .refine((m) => !m.es_ajuste || !m.numero_documento, {
+    message: "un ajuste usa motivo, no numero de documento",
+    path: ["numero_documento"],
   });
 
 movimientosRouter.get("/", requireRole("socio"), async (req, res) => {

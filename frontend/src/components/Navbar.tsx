@@ -26,7 +26,12 @@ export function Navbar() {
               Cargar movimiento
             </NavLink>
           )}
-          <NavLink to="/" end className={claseLink}>
+          {rol === "admin" && (
+            <NavLink to="/movimientos" className={claseLink}>
+              Movimientos
+            </NavLink>
+          )}
+          <NavLink to="/stock" className={claseLink}>
             Stock
           </NavLink>
           <NavLink to="/comparativo" className={claseLink}>

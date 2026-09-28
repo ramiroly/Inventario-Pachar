@@ -51,6 +51,7 @@ export interface MovimientoTerminado {
   destino: Destino | string | null;
   es_ajuste: boolean;
   motivo: string | null;
+  numero_documento: string | null;
 }
 
 export type TipoTanque = "terminado" | "subproducto";

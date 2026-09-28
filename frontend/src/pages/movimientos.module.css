@@ -78,6 +78,15 @@
   color: var(--pachar-muted);
   font-size: 15px;
 }
+.link {
+  color: var(--pachar-ink);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.link:hover {
+  color: var(--pachar-focus);
+}
 
 .form {
   display: flex;

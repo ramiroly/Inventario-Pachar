@@ -17,3 +17,20 @@
 body {
   margin: 0;
 }
+
+/* Imprimir solo un bloque puntual (ej. un comprobante): marcarlo con esta
+   clase global oculta todo lo demás (menú, filtros, botones) al imprimir. */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .comprobante-imprimible,
+  .comprobante-imprimible * {
+    visibility: visible;
+  }
+  .comprobante-imprimible {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+  }
+}
