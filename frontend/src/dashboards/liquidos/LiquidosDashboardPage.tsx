@@ -71,8 +71,11 @@ export function LiquidosDashboardPage() {
   const alertItems: Array<{ text: string; className: string }> = [];
   for (const l of conTerminado) {
     const t = l.terminado!;
-    if (t.litros_anterior === 0 && t.litros_actual > 0) {
-      alertItems.push({ text: `Nuevo lote: ${t.lote} (${formatNum(t.litros_actual)} L)`, className: styles.atagBlue });
+    const lotesNuevos = l.terminados.filter((x) => x.litros_anterior === 0 && x.litros_actual > 0);
+    if (lotesNuevos.length > 0) {
+      for (const n of lotesNuevos) {
+        alertItems.push({ text: `Nuevo lote: ${n.lote} (${formatNum(n.litros_actual)} L)`, className: styles.atagBlue });
+      }
     } else if (t.delta > 100) {
       alertItems.push({ text: `Subió: ${l.nombre} +${formatNum(t.delta)} L`, className: styles.atagGreen });
     } else if (t.delta < -100) {
@@ -414,6 +417,7 @@ function LineaSection({
   const colLt = linea.color_light ?? "#ddd";
   const colS = linea.color_sub ?? "#777";
   const t = linea.terminado;
+  const terminados = linea.terminados;
   const subs = linea.subs;
 
   return (
@@ -423,6 +427,7 @@ function LineaSection({
         <span style={{ fontSize: 10, color: "rgba(255,255,255,.75)", marginLeft: "auto" }}>
           Terminado: {formatNum(t?.litros_actual ?? 0)} L
           {t && t.litros_anterior === 0 && t.litros_actual > 0 ? " · Lote nuevo" : ""}
+          {terminados.length > 1 ? ` · ${terminados.length} lotes` : ""}
           {subs.length ? ` · ${subs.length} subproducto${subs.length > 1 ? "s" : ""}` : ""}
         </span>
       </div>
@@ -430,24 +435,27 @@ function LineaSection({
         <div className={styles.tankGroupRow}>
           <div>
             <div className={styles.subLabel}>Terminado</div>
-            <div style={{ display: "flex" }}>
-              {t ? (
-                <div
-                  className={styles.tankCard}
-                  onMouseEnter={() => tooltip.show(ttTerm(t))}
-                  onMouseLeave={() => tooltip.hide()}
-                >
-                  <div className={styles.tankName} style={{ maxWidth: 72 }}>
-                    {t.lote}
-                    {t.litros_anterior === 0 && t.litros_actual > 0 ? " *" : ""}
+            <div style={{ display: "flex", gap: 8 }}>
+              {terminados.length > 0 ? (
+                terminados.map((tk) => (
+                  <div
+                    key={tk.tanque_id}
+                    className={styles.tankCard}
+                    onMouseEnter={() => tooltip.show(ttTerm(tk))}
+                    onMouseLeave={() => tooltip.hide()}
+                  >
+                    <div className={styles.tankName} style={{ maxWidth: 72 }}>
+                      {tk.lote}
+                      {tk.litros_anterior === 0 && tk.litros_actual > 0 ? " *" : ""}
+                    </div>
+                    <TankSvg litros={tk.litros_actual} prev={tk.litros_anterior > 0 ? tk.litros_anterior : null} cap={tk.capacidad_litros} colorDark={col} colorLight={colLt} width={64} height={130} />
+                    <div className={styles.tankLitros}>{formatNum(tk.litros_actual)} L</div>
+                    <div className={styles.tankCap}>/ {formatNum(tk.capacidad_litros ?? 0)} L</div>
+                    <div className={styles.tankBadge} style={badgeInline(tk.litros_actual, tk.capacidad_litros).style}>
+                      {badgeInline(tk.litros_actual, tk.capacidad_litros).label}
+                    </div>
                   </div>
-                  <TankSvg litros={t.litros_actual} prev={t.litros_anterior > 0 ? t.litros_anterior : null} cap={t.capacidad_litros} colorDark={col} colorLight={colLt} width={64} height={130} />
-                  <div className={styles.tankLitros}>{formatNum(t.litros_actual)} L</div>
-                  <div className={styles.tankCap}>/ {formatNum(t.capacidad_litros ?? 0)} L</div>
-                  <div className={styles.tankBadge} style={badgeInline(t.litros_actual, t.capacidad_litros).style}>
-                    {badgeInline(t.litros_actual, t.capacidad_litros).label}
-                  </div>
-                </div>
+                ))
               ) : (
                 <div style={{ fontSize: 10, color: "#9CA3AF" }}>Sin tanque terminado</div>
               )}

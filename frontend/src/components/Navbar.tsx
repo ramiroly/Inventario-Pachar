@@ -22,18 +22,13 @@ export function Navbar() {
 
         <nav className={styles.links} aria-label="Principal">
           {rol === "admin" && (
-            <NavLink to="/movimientos/nuevo" className={claseLink}>
+            <NavLink to="/movimientos" className={claseLink}>
               Cargar movimiento
             </NavLink>
           )}
           {rol === "admin" && (
-            <NavLink to="/liquidos/nuevo" className={claseLink}>
+            <NavLink to="/liquidos/cargar" className={claseLink}>
               Cargar líquidos
-            </NavLink>
-          )}
-          {rol === "admin" && (
-            <NavLink to="/movimientos" end className={claseLink}>
-              Movimientos
             </NavLink>
           )}
           <NavLink to="/stock" className={claseLink}>

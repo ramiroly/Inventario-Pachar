@@ -50,6 +50,32 @@ export interface TanqueLiquido {
   tipo: TipoTanque;
   capacidad_litros: number | null;
   lote: string | null;
+  activo: boolean;
+  created_at: string;
+}
+
+export type MotivoLiquido = "lote" | "destilacion" | "embotellado" | "otro";
+
+export interface MovimientoLiquido {
+  id: string;
+  tanque_id: string;
+  fecha: string;
+  tipo: "ingreso" | "egreso";
+  litros: number;
+  motivo: MotivoLiquido;
+  numero_documento: string | null;
+  nota: string | null;
+  producto_id: string | null;
+  unidades: number | null;
+  created_at: string;
+}
+
+// Litros que debería haber en un tanque según el último corte medido + movimientos.
+export interface EsperadoTanque {
+  base_fecha: string | null;
+  base_litros: number | null;
+  neto: number;
+  esperado: number;
 }
 
 export interface StockLiquidoSnapshot {
@@ -152,7 +178,10 @@ export interface LineaLiquidos {
   color_dark: string | null;
   color_light: string | null;
   color_sub: string | null;
+  // Total de la línea (suma de sus lotes terminados vigentes); lo usan KPI y gráficos.
   terminado: TanqueTerminadoDashboard | null;
+  // Cada lote terminado vigente, el más nuevo primero.
+  terminados: TanqueTerminadoDashboard[];
   subs: TanqueDashboard[];
 }
 

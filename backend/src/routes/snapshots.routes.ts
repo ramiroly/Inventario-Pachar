@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
 import { supabase } from "../config/supabaseClient.js";
+import { fetchAll } from "../db/fetchAll.js";
 import { requireRole } from "../middleware/requireRole.js";
 
 export const snapshotsRouter = Router();
@@ -58,6 +59,76 @@ snapshotsRouter.post("/", requireRole("admin"), async (req, res) => {
     .single();
   if (error) return res.status(500).json({ error: error.message });
   res.status(201).json(data);
+});
+
+/**
+ * Litros que "deberia" haber en cada tanque segun el ultimo corte medido mas los
+ * movimientos posteriores. Un movimiento con la misma fecha que un corte se
+ * considera ya incluido en esa medicion.
+ *  - modo=corte (por defecto): para precargar un corte nuevo; el punto de partida
+ *    es el ultimo corte ANTERIOR a `fecha`.
+ *  - modo=saldo: saldo a la fecha; el punto de partida es el ultimo corte hasta `fecha`.
+ */
+snapshotsRouter.get("/esperados", requireRole("admin"), async (req, res) => {
+  const fecha = z.string().date().safeParse(req.query.fecha);
+  if (!fecha.success) return res.status(400).json({ error: "Falta una fecha válida (YYYY-MM-DD)." });
+  const alDia = req.query.modo === "saldo";
+
+  try {
+    const [{ data: tanques, error: tanquesError }, snapshots, movimientos] = await Promise.all([
+      supabase.from("tanques_liquidos").select("id, activo"),
+      fetchAll<{ tanque_id: string; fecha_corte: string; litros: number }>((a, b) =>
+        supabase
+          .from("stock_liquidos_snapshot")
+          .select("tanque_id, fecha_corte, litros")
+          .order("fecha_corte", { ascending: false })
+          .order("tanque_id")
+          .range(a, b)
+      ),
+      fetchAll<{ tanque_id: string; fecha: string; tipo: string; litros: number }>((a, b) =>
+        supabase
+          .from("movimientos_liquidos")
+          .select("tanque_id, fecha, tipo, litros")
+          .lte("fecha", fecha.data)
+          .order("fecha")
+          .order("id")
+          .range(a, b)
+      ),
+    ]);
+    if (tanquesError) return res.status(500).json({ error: tanquesError.message });
+
+    const lecturas = new Map<string, { fecha: string; litros: number }[]>();
+    for (const s of snapshots) {
+      const lista = lecturas.get(s.tanque_id) ?? [];
+      lista.push({ fecha: s.fecha_corte, litros: Number(s.litros) });
+      lecturas.set(s.tanque_id, lista);
+    }
+    const movsPorTanque = new Map<string, typeof movimientos>();
+    for (const m of movimientos) {
+      const lista = movsPorTanque.get(m.tanque_id) ?? [];
+      lista.push(m);
+      movsPorTanque.set(m.tanque_id, lista);
+    }
+
+    const resultado: Record<string, { base_fecha: string | null; base_litros: number | null; neto: number; esperado: number }> = {};
+    for (const t of tanques ?? []) {
+      if (t.activo === false) continue;
+      const base = (lecturas.get(t.id) ?? []).find((l) => (alDia ? l.fecha <= fecha.data : l.fecha < fecha.data)) ?? null;
+      const neto = (movsPorTanque.get(t.id) ?? [])
+        .filter((m) => !base || m.fecha > base.fecha)
+        .reduce((acc, m) => acc + (m.tipo === "ingreso" ? 1 : -1) * Number(m.litros), 0);
+      const redondeado = (n: number) => Math.round(n * 1000) / 1000;
+      resultado[t.id] = {
+        base_fecha: base?.fecha ?? null,
+        base_litros: base?.litros ?? null,
+        neto: redondeado(neto),
+        esperado: redondeado((base?.litros ?? 0) + neto),
+      };
+    }
+    res.json(resultado);
+  } catch (e) {
+    res.status(500).json({ error: (e as Error).message });
+  }
 });
 
 snapshotsRouter.post("/corte", requireRole("admin"), async (req, res) => {

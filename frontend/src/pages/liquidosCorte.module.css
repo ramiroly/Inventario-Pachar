@@ -166,7 +166,8 @@
   font-size: 12px;
   color: var(--pachar-muted);
 }
-.aviso {
+.aviso,
+.merma {
   font-size: 12px;
   font-weight: 600;
   color: #9a6a00;

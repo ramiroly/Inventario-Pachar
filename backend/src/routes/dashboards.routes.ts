@@ -289,7 +289,8 @@ dashboardsRouter.get("/liquidos", requireRole("socio"), async (_req, res) => {
 
   const lineasPorId = new Map((lineas ?? []).map((l) => [l.id, l]));
   const tanquesPorLinea = new Map<string, typeof tanques>();
-  for (const tanque of tanques ?? []) {
+  // Los tanques marcados como terminados (lote ya embotellado) no se muestran.
+  for (const tanque of (tanques ?? []).filter((t) => t.activo !== false)) {
     const lista = tanquesPorLinea.get(tanque.linea_id) ?? [];
     lista.push(tanque);
     tanquesPorLinea.set(tanque.linea_id, lista);
@@ -297,25 +298,44 @@ dashboardsRouter.get("/liquidos", requireRole("socio"), async (_req, res) => {
 
   const resultado = [...tanquesPorLinea.entries()].map(([lineaId, tanquesLinea]) => {
     const linea = lineasPorId.get(lineaId);
-    const terminadoTanque = tanquesLinea.find((t) => t.tipo === "terminado");
+    // Un lote nuevo es un tanque terminado nuevo: mientras convive con el anterior,
+    // la linea tiene varios. "terminados" los lista (lote mas nuevo primero) y
+    // "terminado" es el total de la linea, que usan los KPI y graficos.
+    const terminadosTanques = tanquesLinea
+      .filter((t) => t.tipo === "terminado")
+      .sort((a, b) => String(b.created_at ?? "").localeCompare(String(a.created_at ?? "")) || a.nombre.localeCompare(b.nombre));
     const subsTanques = tanquesLinea.filter((t) => t.tipo === "subproducto");
 
-    const terminado = terminadoTanque
-      ? (() => {
-          const { actual, anterior } = litrosDe(terminadoTanque.id);
-          const { delta, loteNuevo } = compararLiquido(actual, anterior);
-          return {
-            tanque_id: terminadoTanque.id,
-            nombre: terminadoTanque.nombre,
-            lote: terminadoTanque.lote,
-            litros_actual: actual,
-            litros_anterior: anterior,
-            capacidad_litros: terminadoTanque.capacidad_litros,
-            delta,
-            lote_nuevo: loteNuevo,
-          };
-        })()
-      : null;
+    const terminados = terminadosTanques.map((t) => {
+      const { actual, anterior } = litrosDe(t.id);
+      const { delta, loteNuevo } = compararLiquido(actual, anterior);
+      return {
+        tanque_id: t.id,
+        nombre: t.nombre,
+        lote: t.lote,
+        litros_actual: actual,
+        litros_anterior: anterior,
+        capacidad_litros: t.capacidad_litros,
+        delta,
+        lote_nuevo: loteNuevo,
+      };
+    });
+
+    const terminado = (() => {
+      if (terminados.length <= 1) return terminados[0] ?? null;
+      const actual = terminados.reduce((acc, t) => acc + t.litros_actual, 0);
+      const anterior = terminados.reduce((acc, t) => acc + t.litros_anterior, 0);
+      const capacidades = terminados.map((t) => t.capacidad_litros).filter((c): c is number => c !== null);
+      const { delta, loteNuevo } = compararLiquido(actual, anterior);
+      return {
+        ...terminados[0],
+        litros_actual: actual,
+        litros_anterior: anterior,
+        capacidad_litros: capacidades.length > 0 ? capacidades.reduce((acc, c) => acc + c, 0) : null,
+        delta,
+        lote_nuevo: loteNuevo,
+      };
+    })();
 
     const subs = subsTanques.map((t) => {
       const { actual, anterior } = litrosDe(t.id);
@@ -338,6 +358,7 @@ dashboardsRouter.get("/liquidos", requireRole("socio"), async (_req, res) => {
       color_light: linea?.color_light ?? null,
       color_sub: linea?.color_sub ?? null,
       terminado,
+      terminados,
       subs,
     };
   });

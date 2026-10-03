@@ -1,0 +1,34 @@
+.selector {
+  display: inline-flex;
+  gap: 4px;
+  margin-bottom: 22px;
+  padding: 4px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.07);
+  font-family: var(--pachar-font-body);
+}
+.opcion {
+  padding: 9px 22px;
+  border-radius: 9px;
+  color: var(--pachar-muted);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.15s, color 0.15s;
+}
+.opcion:hover {
+  color: var(--pachar-ink);
+}
+.activa,
+.activa:hover {
+  background: var(--pachar-black);
+  color: var(--pachar-cream);
+}
+
+@media (max-width: 480px) {
+  .opcion {
+    padding: 9px 12px;
+    font-size: 13px;
+    white-space: nowrap;
+  }
+}

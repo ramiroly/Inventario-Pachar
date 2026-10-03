@@ -12,6 +12,8 @@ const tanqueSchema = z.object({
   // null = capacidad sin confirmar (ver TODO en 004_tanques_liquidos.sql)
   capacidad_litros: z.number().positive().nullable(),
   lote: z.string().nullish(),
+  // false = lote ya embotellado por completo: deja de aparecer en formularios y dashboards
+  activo: z.boolean().optional(),
 });
 
 tanquesRouter.get("/", requireRole("socio"), async (req, res) => {

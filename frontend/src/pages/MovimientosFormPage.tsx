@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
 import logoCerros from "../assets/logo-cerros.png";
+import { SubPestanas, SUBPESTANAS_MOVIMIENTOS } from "../components/SubPestanas";
 import { api } from "../lib/api";
 import { DESTINOS_HABITUALES } from "../lib/destinos";
 import { mensajeError } from "../lib/errores";
@@ -131,6 +131,9 @@ export function MovimientosFormPage() {
 
   return (
     <div className={styles.page}>
+      <div style={{ maxWidth: 1040, margin: "0 auto" }}>
+        <SubPestanas opciones={SUBPESTANAS_MOVIMIENTOS} actual="/movimientos/nuevo" />
+      </div>
       <div className={styles.shell}>
         <aside className={styles.aside}>
           <img className={styles.logo} src={logoCerros} alt="Destilería Andina" />
@@ -151,12 +154,7 @@ export function MovimientosFormPage() {
 
         <main className={styles.main}>
           <h1 className={styles.titulo}>Cargar movimiento</h1>
-          <p className={styles.subtitulo}>
-            Registra una entrada, una salida o un ajuste de productos terminados.{" "}
-            <Link to="/movimientos" className={styles.link}>
-              Ver listado y comprobantes
-            </Link>
-          </p>
+          <p className={styles.subtitulo}>Registra una entrada, una salida o un ajuste de productos terminados.</p>
 
           <form onSubmit={handleSubmit} className={styles.form}>
             <div className={styles.field}>

@@ -7,6 +7,7 @@ import { movimientosRouter } from "./routes/movimientos.routes.js";
 import { tanquesRouter } from "./routes/tanques.routes.js";
 import { snapshotsRouter } from "./routes/snapshots.routes.js";
 import { dashboardsRouter } from "./routes/dashboards.routes.js";
+import { movimientosLiquidosRouter } from "./routes/movimientosLiquidos.routes.js";
 
 export const app = express();
 
@@ -25,5 +26,6 @@ app.use("/lineas", lineasRouter);
 app.use("/productos", productosRouter);
 app.use("/movimientos", movimientosRouter);
 app.use("/tanques", tanquesRouter);
+app.use("/movimientos-liquidos", movimientosLiquidosRouter);
 app.use("/snapshots", snapshotsRouter);
 app.use("/dashboards", dashboardsRouter);

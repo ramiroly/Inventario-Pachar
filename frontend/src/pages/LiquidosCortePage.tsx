@@ -1,27 +1,26 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { SubPestanas, SUBPESTANAS_LIQUIDOS } from "../components/SubPestanas";
 import { api } from "../lib/api";
 import { mensajeError } from "../lib/errores";
 import { formatoFecha, hoyLocal } from "../lib/fechas";
 import { ordenLinea } from "../lib/lineas";
-import type { Linea, StockLiquidoSnapshot, TanqueLiquido } from "../types/models";
-import styles from "./liquidosForm.module.css";
-
-const formatoLitros = (n: number) => n.toLocaleString("es-PE");
-
-function parseLitros(texto: string): number | null {
-  const t = texto.trim().replace(",", ".");
-  return /^\d+(\.\d+)?$/.test(t) ? Number(t) : null;
-}
+import { conSignoLitros, formatoLitros, parseLitros } from "../lib/numeros";
+import type { EsperadoTanque, Linea, StockLiquidoSnapshot, TanqueLiquido } from "../types/models";
+import styles from "./liquidosCorte.module.css";
 
 interface Lectura {
   fecha: string;
   litros: number;
 }
 
-export function LiquidosFormPage() {
+const masNuevoPrimero = (a: TanqueLiquido, b: TanqueLiquido) =>
+  String(b.created_at ?? "").localeCompare(String(a.created_at ?? "")) || a.nombre.localeCompare(b.nombre, "es");
+
+export function LiquidosCortePage() {
   const [tanques, setTanques] = useState<TanqueLiquido[]>([]);
   const [lineas, setLineas] = useState<Linea[]>([]);
   const [snapshots, setSnapshots] = useState<StockLiquidoSnapshot[]>([]);
+  const [esperados, setEsperados] = useState<Record<string, EsperadoTanque>>({});
   const [cargando, setCargando] = useState(true);
 
   const [fecha, setFecha] = useState(hoyLocal);
@@ -42,7 +41,7 @@ export function LiquidosFormPage() {
       api.get<Linea[]>("/lineas"),
       api.get<StockLiquidoSnapshot[]>("/snapshots"),
     ]);
-    setTanques(t);
+    setTanques(t.filter((x) => x.activo !== false));
     setLineas(l);
     setSnapshots(s);
   }, []);
@@ -74,30 +73,39 @@ export function LiquidosFormPage() {
     [historial, fecha]
   );
 
-  // Valor inicial de cada casilla: el de esa fecha si ya existe, o el último conocido.
-  const valorInicial = useCallback(
-    (tanqueId: string) => {
-      const lista = historial.get(tanqueId) ?? [];
-      const exacto = lista.find((h) => h.fecha === fecha);
-      return (exacto ?? lista.find((h) => h.fecha < fecha))?.litros ?? null;
-    },
-    [historial, fecha]
-  );
-
-  // Solo al cambiar la fecha (o terminar de cargar): no pisa lo que se está escribiendo.
+  // Al cambiar la fecha (o terminar de cargar) se precargan las casillas: el valor
+  // medido de esa fecha si ya hay corte, o los litros esperados según el último
+  // corte y los movimientos. No se vuelve a ejecutar mientras se escribe.
   useEffect(() => {
     if (cargando) return;
-    const l: Record<string, string> = {};
-    const lo: Record<string, string> = {};
-    for (const t of tanques) {
-      const v = valorInicial(t.id);
-      l[t.id] = v === null ? "" : String(v);
-      lo[t.id] = t.lote ?? "";
-    }
-    setLitros(l);
-    setLotes(lo);
-    setMensaje(null);
-    setError(null);
+    let vigente = true;
+    api
+      .get<Record<string, EsperadoTanque>>(`/snapshots/esperados?fecha=${fecha}`)
+      .catch(() => ({}) as Record<string, EsperadoTanque>)
+      .then((esp) => {
+        if (!vigente) return;
+        setEsperados(esp);
+        const l: Record<string, string> = {};
+        const lo: Record<string, string> = {};
+        for (const t of tanques) {
+          const lista = historial.get(t.id) ?? [];
+          const exacto = lista.find((h) => h.fecha === fecha);
+          const e = esp[t.id];
+          let inicial: number | null;
+          if (exacto) inicial = exacto.litros;
+          else if (e && (e.base_litros !== null || e.neto !== 0)) inicial = e.esperado;
+          else inicial = lista.find((h) => h.fecha < fecha)?.litros ?? null;
+          l[t.id] = inicial === null ? "" : String(inicial);
+          lo[t.id] = t.lote ?? "";
+        }
+        setLitros(l);
+        setLotes(lo);
+        setMensaje(null);
+        setError(null);
+      });
+    return () => {
+      vigente = false;
+    };
   }, [fecha, cargando]);
 
   const grupos = useMemo(
@@ -108,11 +116,11 @@ export function LiquidosFormPage() {
           const delaLinea = tanques.filter((t) => t.linea_id === linea.id);
           return {
             linea,
-            terminado: delaLinea.find((t) => t.tipo === "terminado") ?? null,
+            terminados: delaLinea.filter((t) => t.tipo === "terminado").sort(masNuevoPrimero),
             subs: delaLinea.filter((t) => t.tipo === "subproducto").sort((a, b) => a.nombre.localeCompare(b.nombre, "es")),
           };
         })
-        .filter((g) => g.terminado || g.subs.length > 0),
+        .filter((g) => g.terminados.length > 0 || g.subs.length > 0),
     [lineas, tanques]
   );
 
@@ -195,11 +203,29 @@ export function LiquidosFormPage() {
     }
   }
 
-  function filaTanque(t: TanqueLiquido) {
+  async function terminarLote(t: TanqueLiquido) {
+    const ok = window.confirm(
+      `¿Marcar "${t.lote ?? t.nombre}" como terminado?\n\nDejará de aparecer en este formulario y en el dashboard de Líquidos. Si quieres que quede registrado su 0 L en un corte, guarda el corte antes.`
+    );
+    if (!ok) return;
+    setError(null);
+    try {
+      await api.patch(`/tanques/${t.id}`, { activo: false });
+      await cargar();
+      setMensaje(`${t.lote ?? t.nombre} marcado como terminado.`);
+    } catch (e) {
+      setError(mensajeError(e));
+    }
+  }
+
+  function filaTanque(t: TanqueLiquido, puedeTerminar: boolean) {
     const valor = parseLitros(litros[t.id] ?? "");
     const ant = anteriorDe(t.id);
+    const esp = esperados[t.id];
     const excede = valor !== null && t.capacidad_litros !== null && valor > t.capacidad_litros;
     const cambio = valor !== null && (!ant || ant.litros !== valor);
+    const hayMovimientos = !!esp && esp.neto !== 0;
+    const difEsperado = hayMovimientos && valor !== null ? Math.round((valor - esp.esperado) * 1000) / 1000 : 0;
 
     let deltaTexto = "";
     let deltaClase = styles.deltaNeutro;
@@ -211,7 +237,7 @@ export function LiquidosFormPage() {
       } else if (delta === 0) {
         deltaTexto = "Sin cambio";
       } else {
-        deltaTexto = `${delta > 0 ? "+" : ""}${formatoLitros(delta)} L`;
+        deltaTexto = conSignoLitros(delta);
         deltaClase = delta > 0 ? styles.deltaSube : styles.deltaBaja;
       }
     } else if (valor !== null) {
@@ -226,6 +252,16 @@ export function LiquidosFormPage() {
             Cap. {t.capacidad_litros === null ? "sin definir" : `${formatoLitros(t.capacidad_litros)} L`} · Anterior{" "}
             {ant ? `${formatoLitros(ant.litros)} L` : "—"}
           </span>
+          {hayMovimientos && (
+            <span className={styles.meta}>
+              Movimientos {conSignoLitros(esp.neto)} · Esperado {formatoLitros(esp.esperado)} L
+            </span>
+          )}
+          {difEsperado !== 0 && (
+            <span className={styles.merma}>
+              {difEsperado < 0 ? "Merma" : "Sobrante"} vs esperado: {conSignoLitros(difEsperado)}
+            </span>
+          )}
           {excede && <span className={styles.aviso}>Supera la capacidad del tanque</span>}
           {t.tipo === "terminado" && (
             <label className={styles.loteWrap}>
@@ -242,6 +278,11 @@ export function LiquidosFormPage() {
           )}
           {t.tipo === "terminado" && (lotes[t.id] ?? "").trim() !== (t.lote ?? "") && (
             <span className={styles.meta}>Al guardar, el nombre del tanque tomará este lote.</span>
+          )}
+          {puedeTerminar && valor === 0 && (
+            <button type="button" className={styles.botonLink} onClick={() => terminarLote(t)}>
+              Marcar lote como terminado
+            </button>
           )}
         </div>
         <div className={styles.filaValor}>
@@ -280,11 +321,13 @@ export function LiquidosFormPage() {
   return (
     <div className={styles.page}>
       <div className={styles.shell}>
+        <SubPestanas opciones={SUBPESTANAS_LIQUIDOS} actual="/liquidos/cargar/corte" />
         <header className={styles.header}>
           <div>
-            <h1 className={styles.titulo}>Cargar líquidos</h1>
+            <h1 className={styles.titulo}>Corte semanal de líquidos</h1>
             <p className={styles.subtitulo}>
-              Litros de cada tanque en la fecha de corte.{" "}
+              Litros medidos en cada tanque. Las casillas traen los litros esperados según el último corte y los
+              movimientos registrados.{" "}
               {ultimoCorte ? `Último corte cargado: ${formatoFecha(ultimoCorte)}.` : "Aún no hay cortes cargados."}
             </p>
           </div>
@@ -311,20 +354,20 @@ export function LiquidosFormPage() {
           <p className={styles.cargando}>Cargando tanques...</p>
         ) : (
           <div className={styles.grid}>
-            {grupos.map(({ linea, terminado, subs }) => (
+            {grupos.map(({ linea, terminados, subs }) => (
               <section key={linea.id} className={styles.card}>
                 <h2 className={styles.cardTitulo} style={{ background: linea.color_dark ?? "#374151" }}>
                   {linea.nombre}
                 </h2>
-                {terminado && (
+                {terminados.length > 0 && (
                   <div className={styles.bloque}>
-                    <p className={styles.bloqueTitulo}>Terminado</p>
-                    {filaTanque(terminado)}
+                    <p className={styles.bloqueTitulo}>{terminados.length > 1 ? "Terminado (lotes vigentes)" : "Terminado"}</p>
+                    {terminados.map((t) => filaTanque(t, terminados.length > 1))}
                   </div>
                 )}
                 <div className={styles.bloque}>
                   <p className={styles.bloqueTitulo}>Subproductos</p>
-                  {subs.map(filaTanque)}
+                  {subs.map((t) => filaTanque(t, false))}
                   {subs.length === 0 && <p className={styles.vacio}>Sin subproductos.</p>}
 
                   {agregandoEn === linea.id ? (

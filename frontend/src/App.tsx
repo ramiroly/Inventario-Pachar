@@ -10,7 +10,9 @@ import { ComparativoDashboardPage } from "./dashboards/comparativo/ComparativoDa
 import { LiquidosDashboardPage } from "./dashboards/liquidos/LiquidosDashboardPage";
 import { MovimientosFormPage } from "./pages/MovimientosFormPage";
 import { MovimientosListPage } from "./pages/MovimientosListPage";
-import { LiquidosFormPage } from "./pages/LiquidosFormPage";
+import { LiquidosCortePage } from "./pages/LiquidosCortePage";
+import { LiquidosMovimientoPage } from "./pages/LiquidosMovimientoPage";
+import { MovimientosLiquidosListPage } from "./pages/MovimientosLiquidosListPage";
 
 // Página de entrada ("/"): a los admin los lleva directo a Cargar movimiento
 // (su primera tarea del día); a los socios, a Stock.
@@ -83,16 +85,35 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+        <Route path="/liquidos/nuevo" element={<Navigate to="/liquidos/cargar/corte" replace />} />
+        <Route path="/liquidos/cargar" element={<Navigate to="/liquidos/cargar/movimiento" replace />} />
         <Route
-          path="/liquidos/nuevo"
+          path="/liquidos/cargar/movimiento"
           element={
             <ProtectedRoute rolRequerido="admin">
-              <LiquidosFormPage />
+              <LiquidosMovimientoPage />
             </ProtectedRoute>
           }
         />
         <Route
-          path="/movimientos"
+          path="/liquidos/cargar/registro"
+          element={
+            <ProtectedRoute rolRequerido="admin">
+              <MovimientosLiquidosListPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/liquidos/cargar/corte"
+          element={
+            <ProtectedRoute rolRequerido="admin">
+              <LiquidosCortePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="/movimientos" element={<Navigate to="/movimientos/nuevo" replace />} />
+        <Route
+          path="/movimientos/registro"
           element={
             <ProtectedRoute rolRequerido="admin">
               <MovimientosListPage />

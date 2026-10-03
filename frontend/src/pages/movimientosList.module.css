@@ -118,9 +118,15 @@
 
 .tableWrap {
   border-radius: 14px;
-  overflow: hidden;
+  overflow-x: auto;
   border: 1px solid var(--pachar-line);
   background: #fff;
+}
+.celdaDetalle {
+  min-width: 190px;
+  max-width: 300px;
+  white-space: normal !important;
+  line-height: 1.35;
 }
 .table {
   width: 100%;

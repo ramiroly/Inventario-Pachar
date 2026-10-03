@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import logoMarca from "../assets/logo-marca.png";
+import { SubPestanas, SUBPESTANAS_MOVIMIENTOS } from "../components/SubPestanas";
 import { api } from "../lib/api";
 import { useAuth } from "../lib/useAuth";
 import type { Linea, MovimientoTerminado, ProductoTerminado } from "../types/models";
@@ -132,9 +133,10 @@ export function MovimientosListPage() {
   return (
     <div className={styles.page}>
       <div className={styles.shell}>
+        <SubPestanas opciones={SUBPESTANAS_MOVIMIENTOS} actual="/movimientos/registro" />
         <div className={styles.header}>
           <div>
-            <h1 className={styles.titulo}>Movimientos</h1>
+            <h1 className={styles.titulo}>Registro de movimientos</h1>
             <p className={styles.subtitulo}>Historial de entradas, salidas y ajustes de productos terminados.</p>
           </div>
         </div>

@@ -63,6 +63,24 @@ export interface TanqueLiquido {
   tipo: TipoTanque;
   capacidad_litros: number | null; // null = capacidad sin confirmar, ver TODO en migración
   lote: string | null;
+  activo: boolean;
+  created_at: string;
+}
+
+export type MotivoLiquido = "lote" | "destilacion" | "embotellado" | "otro";
+
+export interface MovimientoLiquido {
+  id: string;
+  tanque_id: string;
+  fecha: string;
+  tipo: "ingreso" | "egreso";
+  litros: number;
+  motivo: MotivoLiquido;
+  numero_documento: string | null;
+  nota: string | null;
+  producto_id: string | null;
+  unidades: number | null;
+  created_at: string;
 }
 
 export interface StockLiquidoSnapshot {
