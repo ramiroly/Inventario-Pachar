@@ -10,6 +10,7 @@ import { ComparativoDashboardPage } from "./dashboards/comparativo/ComparativoDa
 import { LiquidosDashboardPage } from "./dashboards/liquidos/LiquidosDashboardPage";
 import { MovimientosFormPage } from "./pages/MovimientosFormPage";
 import { MovimientosListPage } from "./pages/MovimientosListPage";
+import { LiquidosFormPage } from "./pages/LiquidosFormPage";
 
 // Página de entrada ("/"): a los admin los lleva directo a Cargar movimiento
 // (su primera tarea del día); a los socios, a Stock.
@@ -79,6 +80,14 @@ export default function App() {
           element={
             <ProtectedRoute rolRequerido="admin">
               <MovimientosFormPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/liquidos/nuevo"
+          element={
+            <ProtectedRoute rolRequerido="admin">
+              <LiquidosFormPage />
             </ProtectedRoute>
           }
         />

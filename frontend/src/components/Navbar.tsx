@@ -27,7 +27,12 @@ export function Navbar() {
             </NavLink>
           )}
           {rol === "admin" && (
-            <NavLink to="/movimientos" className={claseLink}>
+            <NavLink to="/liquidos/nuevo" className={claseLink}>
+              Cargar líquidos
+            </NavLink>
+          )}
+          {rol === "admin" && (
+            <NavLink to="/movimientos" end className={claseLink}>
               Movimientos
             </NavLink>
           )}
@@ -37,7 +42,7 @@ export function Navbar() {
           <NavLink to="/comparativo" className={claseLink}>
             Comparativo
           </NavLink>
-          <NavLink to="/liquidos" className={claseLink}>
+          <NavLink to="/liquidos" end className={claseLink}>
             Líquidos
           </NavLink>
         </nav>

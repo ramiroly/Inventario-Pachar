@@ -3,6 +3,9 @@ import { Link } from "react-router-dom";
 import logoCerros from "../assets/logo-cerros.png";
 import { api } from "../lib/api";
 import { DESTINOS_HABITUALES } from "../lib/destinos";
+import { mensajeError } from "../lib/errores";
+import { hoyLocal } from "../lib/fechas";
+import { ordenLinea } from "../lib/lineas";
 import type { Linea, ProductoTerminado } from "../types/models";
 import styles from "./movimientos.module.css";
 
@@ -14,25 +17,6 @@ const MODOS: { id: Modo; etiqueta: string }[] = [
   { id: "ajuste", etiqueta: "Ajuste" },
 ];
 
-const ORDEN_LINEAS = ["Matacuy", "Salqa Azul", "Salqa Verde", "Añejo", "Reposado", "Cosecha", "Botanizado", "Licor de Café"];
-
-function ordenLinea(nombre: string) {
-  const i = ORDEN_LINEAS.indexOf(nombre);
-  return i === -1 ? ORDEN_LINEAS.length : i;
-}
-
-function mensajeError(e: unknown): string {
-  const texto = e instanceof Error ? e.message : String(e);
-  try {
-    const detalle = JSON.parse(texto) as { fieldErrors?: Record<string, string[]> };
-    const campos = Object.keys(detalle.fieldErrors ?? {});
-    if (campos.length > 0) return `Revisa los datos ingresados (${campos.join(", ")}).`;
-  } catch {
-    // no era JSON: se muestra el texto tal cual
-  }
-  return texto;
-}
-
 const formatoUnidades = (n: number) => n.toLocaleString("es-PE");
 const conSigno = (n: number) => (n > 0 ? `+${formatoUnidades(n)}` : formatoUnidades(n));
 
@@ -41,7 +25,7 @@ export function MovimientosFormPage() {
   const [lineas, setLineas] = useState<Linea[]>([]);
   const [stockPorProducto, setStockPorProducto] = useState<Record<string, number>>({});
   const [productoId, setProductoId] = useState("");
-  const [fecha, setFecha] = useState(() => new Date().toISOString().slice(0, 10));
+  const [fecha, setFecha] = useState(hoyLocal);
   const [modo, setModo] = useState<Modo>("salida");
   const [cantidad, setCantidad] = useState("");
   const [numeroDocumento, setNumeroDocumento] = useState("");

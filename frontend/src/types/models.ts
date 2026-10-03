@@ -52,6 +52,13 @@ export interface TanqueLiquido {
   lote: string | null;
 }
 
+export interface StockLiquidoSnapshot {
+  id: string;
+  tanque_id: string;
+  fecha_corte: string;
+  litros: number;
+}
+
 export type Semaforo = "rojo" | "naranja" | "verde";
 
 export interface CoberturaLinea {
