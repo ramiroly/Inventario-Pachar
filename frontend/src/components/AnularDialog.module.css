@@ -1,0 +1,114 @@
+.fondo {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(10, 10, 10, 0.55);
+  font-family: var(--pachar-font-body);
+}
+.dialogo {
+  width: 100%;
+  max-width: 440px;
+  padding: 26px 26px 22px;
+  border-radius: 16px;
+  background: var(--pachar-paper);
+  color: var(--pachar-ink);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+  box-sizing: border-box;
+}
+.dialogo *,
+.dialogo *::before,
+.dialogo *::after {
+  box-sizing: border-box;
+}
+.titulo {
+  margin: 0 0 14px;
+  font-family: var(--pachar-font-display);
+  font-size: 22px;
+}
+.resumen {
+  margin-bottom: 12px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: #fff;
+  border: 1px solid var(--pachar-line);
+}
+.resumen p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.resumen p:first-child {
+  font-weight: 700;
+}
+.aviso {
+  margin: 0 0 16px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--pachar-muted);
+}
+.label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.input {
+  width: 100%;
+  height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--pachar-line);
+  border-radius: 10px;
+  background: #fff;
+  font: inherit;
+  font-size: 15px;
+  color: inherit;
+  outline: none;
+}
+.input:focus {
+  border-color: var(--pachar-danger);
+  box-shadow: 0 0 0 3px rgba(164, 49, 42, 0.16);
+}
+.error {
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  border: 1px solid #efc7c2;
+  border-radius: 8px;
+  background: #f8e4e1;
+  color: var(--pachar-danger);
+  font-size: 13.5px;
+}
+.botones {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+.cancelar,
+.anular {
+  height: 42px;
+  padding: 0 18px;
+  border-radius: 10px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.cancelar {
+  border: 1px solid var(--pachar-line);
+  background: transparent;
+  color: var(--pachar-ink);
+}
+.anular {
+  border: 0;
+  background: var(--pachar-danger);
+  color: #fff;
+}
+.anular:disabled,
+.cancelar:disabled {
+  opacity: 0.5;
+  cursor: default;
+}

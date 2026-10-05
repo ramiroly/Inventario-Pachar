@@ -3,6 +3,7 @@ import { z } from "zod";
 import { supabase } from "../config/supabaseClient.js";
 import { fetchAll } from "../db/fetchAll.js";
 import { requireRole } from "../middleware/requireRole.js";
+import { anularMovimiento } from "./anularMovimiento.js";
 
 export const movimientosLiquidosRouter = Router();
 
@@ -63,6 +64,8 @@ movimientosLiquidosRouter.get("/", requireRole("admin"), async (req, res) => {
     res.status(500).json({ error: (e as Error).message });
   }
 });
+
+movimientosLiquidosRouter.patch("/:id/anular", requireRole("admin"), anularMovimiento("movimientos_liquidos"));
 
 movimientosLiquidosRouter.post("/", requireRole("admin"), async (req, res) => {
   const parsed = movimientoSchema.safeParse(req.body);

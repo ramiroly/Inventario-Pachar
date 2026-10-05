@@ -351,3 +351,62 @@
 }
 
 /* Solo se ve el comprobante al imprimir (regla global, ver theme/brand.css) */
+
+/* Movimientos anulados */
+.filaAnulada td {
+  color: var(--pachar-muted);
+  text-decoration: line-through;
+  background: rgba(0, 0, 0, 0.02);
+}
+.filaAnulada .badge {
+  opacity: 0.55;
+}
+.motivoAnulacion {
+  display: inline-block;
+  text-decoration: none;
+  color: var(--pachar-danger);
+  font-weight: 600;
+}
+.badgeAnulado {
+  display: inline-block;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: #ececec;
+  color: #555;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+.anularBtn {
+  padding: 4px 12px;
+  border: 1px solid var(--pachar-line);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--pachar-danger);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.anularBtn:hover {
+  background: var(--pachar-danger);
+  border-color: var(--pachar-danger);
+  color: #fff;
+}
+.ocultar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 42px;
+  font-size: 13.5px;
+  color: var(--pachar-muted);
+  cursor: pointer;
+}
+.notaAnuladas {
+  margin: 14px 0 0;
+  font-size: 12.5px;
+  font-style: italic;
+  color: var(--pachar-muted);
+}

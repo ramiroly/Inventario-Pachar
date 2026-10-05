@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import logoMarca from "../assets/logo-marca.png";
+import { AnularDialog } from "../components/AnularDialog";
 import { SubPestanas, SUBPESTANAS_LIQUIDOS } from "../components/SubPestanas";
 import { api } from "../lib/api";
 import { mensajeError } from "../lib/errores";
@@ -54,6 +55,8 @@ export function MovimientosLiquidosListPage() {
   const [tipo, setTipo] = useState<FiltroTipo>("todos");
   const [motivo, setMotivo] = useState<FiltroMotivo>("todos");
   const [buscarDoc, setBuscarDoc] = useState("");
+  const [anulando, setAnulando] = useState<Fila | null>(null);
+  const [ocultarAnulados, setOcultarAnulados] = useState(false);
   const [params, setParams] = useSearchParams();
   const docSeleccionado = params.get("doc");
 
@@ -95,22 +98,46 @@ export function MovimientosLiquidosListPage() {
   const filasFiltradas = useMemo(() => {
     const q = texto.trim().toLowerCase();
     return filas.filter((f) => {
+      if (ocultarAnulados && f.mov.anulado) return false;
       if (tipo !== "todos" && f.mov.tipo !== tipo) return false;
       if (motivo !== "todos" && f.mov.motivo !== motivo) return false;
       if (!q) return true;
-      return [f.mov.numero_documento, f.tanque?.nombre, f.linea?.nombre, f.producto?.descripcion, f.mov.nota]
+      return [f.mov.numero_documento, f.tanque?.nombre, f.linea?.nombre, f.producto?.descripcion, f.mov.nota, f.mov.anulado_motivo]
         .filter(Boolean)
         .join(" ")
         .toLowerCase()
         .includes(q);
     });
-  }, [filas, texto, tipo, motivo]);
+  }, [filas, texto, tipo, motivo, ocultarAnulados]);
 
-  const lineasComprobante = useMemo(() => {
+  // Todos los movimientos con ese N° (los anulados no entran al comprobante).
+  const delDocumento = useMemo(() => {
     if (!docSeleccionado) return [];
     const doc = docSeleccionado.trim();
     return filas.filter((f) => (f.mov.numero_documento ?? "").trim() === doc);
   }, [filas, docSeleccionado]);
+  const lineasComprobante = useMemo(() => delDocumento.filter((f) => !f.mov.anulado), [delDocumento]);
+  const lineasAnuladas = delDocumento.length - lineasComprobante.length;
+
+  async function recargar() {
+    setMovimientos(await api.get<MovimientoLiquido[]>("/movimientos-liquidos"));
+  }
+
+  async function confirmarAnulacion(motivoAnulacion: string) {
+    if (!anulando) return;
+    await api.patch(`/movimientos-liquidos/${anulando.mov.id}/anular`, { motivo: motivoAnulacion });
+    setAnulando(null);
+    await recargar();
+  }
+
+  function resumenAnulacion(f: Fila): string[] {
+    const m = f.mov;
+    return [
+      `${etiquetaTipo(m.tipo)} · ${litrosConSigno(m)} · ${ETIQUETA_MOTIVO[m.motivo]}`,
+      `${f.tanque?.nombre ?? "Tanque"} · ${formatoFecha(m.fecha)}`,
+      m.numero_documento ? `N° ${m.numero_documento}` : "Sin N° de registro",
+    ];
+  }
 
   function abrirComprobante(numero: string) {
     const doc = numero.trim();
@@ -134,10 +161,14 @@ export function MovimientosLiquidosListPage() {
 
           {lineasComprobante.length === 0 ? (
             <div className={styles.comprobante}>
-              <p className={styles.vacio}>No hay movimientos de líquidos con el N° de registro "{docSeleccionado}".</p>
+              <p className={styles.vacio}>
+                {lineasAnuladas > 0
+                  ? `Todos los movimientos con el N° "${docSeleccionado}" están anulados.`
+                  : `No hay movimientos de líquidos con el N° de registro "${docSeleccionado}".`}
+              </p>
             </div>
           ) : (
-            <Comprobante numero={docSeleccionado} filas={lineasComprobante} generadoPor={session?.user.email ?? ""} />
+            <Comprobante numero={docSeleccionado} filas={lineasComprobante} anuladas={lineasAnuladas} generadoPor={session?.user.email ?? ""} />
           )}
         </div>
       </div>
@@ -192,6 +223,10 @@ export function MovimientosLiquidosListPage() {
               ))}
             </select>
           </div>
+          <label className={styles.ocultar}>
+            <input type="checkbox" checked={ocultarAnulados} onChange={(e) => setOcultarAnulados(e.target.checked)} />
+            Ocultar anulados
+          </label>
           <form
             className={styles.buscarDoc}
             onSubmit={(e) => {
@@ -230,11 +265,12 @@ export function MovimientosLiquidosListPage() {
                 <th>Litros</th>
                 <th>Detalle</th>
                 <th>N° registro</th>
+                <th></th>
               </tr>
             </thead>
             <tbody>
               {filasFiltradas.map((f) => (
-                <tr key={f.mov.id}>
+                <tr key={f.mov.id} className={f.mov.anulado ? styles.filaAnulada : undefined}>
                   <td>{formatoFecha(f.mov.fecha)}</td>
                   <td>
                     <span className={claseTipo(f.mov.tipo)}>{etiquetaTipo(f.mov.tipo)}</span>
@@ -243,7 +279,13 @@ export function MovimientosLiquidosListPage() {
                   <td>{f.tanque?.nombre ?? "—"}</td>
                   <td>{f.linea?.nombre ?? "—"}</td>
                   <td>{litrosConSigno(f.mov)}</td>
-                  <td className={styles.celdaDetalle}>{detalle(f)}</td>
+                  <td className={styles.celdaDetalle}>
+                    {f.mov.anulado ? (
+                      <span className={styles.motivoAnulacion}>Anulado: {f.mov.anulado_motivo ?? "sin motivo"}</span>
+                    ) : (
+                      detalle(f)
+                    )}
+                  </td>
                   <td>
                     {f.mov.numero_documento ? (
                       <button type="button" className={styles.docBtn} onClick={() => abrirComprobante(f.mov.numero_documento!)}>
@@ -251,6 +293,15 @@ export function MovimientosLiquidosListPage() {
                       </button>
                     ) : (
                       <span className={styles.sinDoc}>—</span>
+                    )}
+                  </td>
+                  <td>
+                    {f.mov.anulado ? (
+                      <span className={styles.badgeAnulado}>Anulado</span>
+                    ) : (
+                      <button type="button" className={styles.anularBtn} onClick={() => setAnulando(f)}>
+                        Anular
+                      </button>
                     )}
                   </td>
                 </tr>
@@ -268,11 +319,14 @@ export function MovimientosLiquidosListPage() {
           )}
         </div>
       </div>
+      {anulando && (
+        <AnularDialog resumen={resumenAnulacion(anulando)} onConfirmar={confirmarAnulacion} onCancelar={() => setAnulando(null)} />
+      )}
     </div>
   );
 }
 
-function Comprobante({ numero, filas, generadoPor }: { numero: string; filas: Fila[]; generadoPor: string }) {
+function Comprobante({ numero, filas, anuladas, generadoPor }: { numero: string; filas: Fila[]; anuladas: number; generadoPor: string }) {
   const motivos = new Set(filas.map((f) => f.mov.motivo));
   const titulo =
     motivos.size === 1 && motivos.has("embotellado")
@@ -358,6 +412,12 @@ function Comprobante({ numero, filas, generadoPor }: { numero: string; filas: Fi
           )}
         </tfoot>
       </table>
+
+      {anuladas > 0 && (
+        <p className={styles.notaAnuladas}>
+          Se omitieron {anuladas} línea{anuladas > 1 ? "s" : ""} anulada{anuladas > 1 ? "s" : ""} de este N°.
+        </p>
+      )}
 
       <div className={styles.comprobanteFooter}>
         <span>Generado por {generadoPor || "—"}</span>

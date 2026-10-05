@@ -39,6 +39,8 @@ export interface MovimientoTerminado {
   es_ajuste: boolean;
   motivo: string | null;
   numero_documento: string | null;
+  anulado: boolean;
+  anulado_motivo: string | null;
 }
 
 export type TipoTanque = "terminado" | "subproducto";
@@ -68,6 +70,8 @@ export interface MovimientoLiquido {
   producto_id: string | null;
   unidades: number | null;
   created_at: string;
+  anulado: boolean;
+  anulado_motivo: string | null;
 }
 
 // Litros que debería haber en un tanque según el último corte medido + movimientos.

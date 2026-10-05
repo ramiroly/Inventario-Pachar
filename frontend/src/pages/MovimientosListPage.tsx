@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import logoMarca from "../assets/logo-marca.png";
+import { AnularDialog } from "../components/AnularDialog";
 import { SubPestanas, SUBPESTANAS_MOVIMIENTOS } from "../components/SubPestanas";
 import { api } from "../lib/api";
 import { useAuth } from "../lib/useAuth";
@@ -35,6 +36,12 @@ function formatoFecha(iso: string) {
   return `${d}/${m}/${a}`;
 }
 
+interface Fila {
+  mov: MovimientoTerminado;
+  producto?: ProductoTerminado;
+  linea?: Linea;
+}
+
 export function MovimientosListPage() {
   const { session } = useAuth();
   const [movimientos, setMovimientos] = useState<MovimientoTerminado[]>([]);
@@ -47,6 +54,8 @@ export function MovimientosListPage() {
   const [tipo, setTipo] = useState<FiltroTipo>("todos");
   const [buscarDoc, setBuscarDoc] = useState("");
   const [opciones, setOpciones] = useState<string[] | null>(null);
+  const [anulando, setAnulando] = useState<Fila | null>(null);
+  const [ocultarAnulados, setOcultarAnulados] = useState(false);
   const [params, setParams] = useSearchParams();
   const docSeleccionado = params.get("doc");
 
@@ -81,21 +90,45 @@ export function MovimientosListPage() {
   const filasFiltradas = useMemo(() => {
     const q = texto.trim().toLowerCase();
     return filas.filter(({ mov, producto }) => {
+      if (ocultarAnulados && mov.anulado) return false;
       if (tipo !== "todos" && tipoDe(mov) !== tipo) return false;
       if (!q) return true;
-      const campos = [mov.numero_documento, producto?.descripcion, mov.destino, mov.motivo]
+      const campos = [mov.numero_documento, producto?.descripcion, mov.destino, mov.motivo, mov.anulado_motivo]
         .filter(Boolean)
         .join(" ")
         .toLowerCase();
       return campos.includes(q);
     });
-  }, [filas, texto, tipo]);
+  }, [filas, texto, tipo, ocultarAnulados]);
 
-  const lineasComprobante = useMemo(() => {
+  // Todos los movimientos con ese N° (los anulados no entran al comprobante).
+  const delDocumento = useMemo(() => {
     if (!docSeleccionado) return [];
     const doc = docSeleccionado.trim();
     return filas.filter(({ mov }) => (mov.numero_documento ?? "").trim() === doc);
   }, [filas, docSeleccionado]);
+  const lineasComprobante = useMemo(() => delDocumento.filter(({ mov }) => !mov.anulado), [delDocumento]);
+  const lineasAnuladas = delDocumento.length - lineasComprobante.length;
+
+  async function recargar() {
+    setMovimientos(await api.get<MovimientoTerminado[]>("/movimientos"));
+  }
+
+  async function confirmarAnulacion(motivo: string) {
+    if (!anulando) return;
+    await api.patch(`/movimientos/${anulando.mov.id}/anular`, { motivo });
+    setAnulando(null);
+    await recargar();
+  }
+
+  function resumenAnulacion(f: Fila): string[] {
+    const m = f.mov;
+    return [
+      `${ETIQUETA_TIPO[tipoDe(m)]} · ${formatoUnidades(m.cantidad)} u. de ${f.producto?.descripcion ?? "producto"}`,
+      `Fecha: ${formatoFecha(m.fecha)}${m.destino ? ` · Destino: ${m.destino}` : ""}`,
+      m.numero_documento ? `N° ${m.numero_documento}` : "Sin N° de documento",
+    ];
+  }
 
   function abrirComprobante(numero: string) {
     const doc = numero.trim();
@@ -112,6 +145,7 @@ export function MovimientosListPage() {
     const candidatos = [
       ...new Set(
         movimientos
+          .filter((m) => !m.anulado)
           .map((m) => m.numero_documento)
           .filter((n): n is string => !!n)
           .filter((n) => {
@@ -146,10 +180,14 @@ export function MovimientosListPage() {
 
           {lineasComprobante.length === 0 ? (
             <div className={styles.comprobante}>
-              <p className={styles.vacio}>No hay movimientos con el N° de documento "{docSeleccionado}".</p>
+              <p className={styles.vacio}>
+                {lineasAnuladas > 0
+                  ? `Todos los movimientos con el N° "${docSeleccionado}" están anulados.`
+                  : `No hay movimientos con el N° de documento "${docSeleccionado}".`}
+              </p>
             </div>
           ) : (
-            <Comprobante numero={docSeleccionado} filas={lineasComprobante} generadoPor={session?.user.email ?? ""} />
+            <Comprobante numero={docSeleccionado} filas={lineasComprobante} anuladas={lineasAnuladas} generadoPor={session?.user.email ?? ""} />
           )}
         </div>
       </div>
@@ -192,6 +230,10 @@ export function MovimientosListPage() {
               <option value="ajuste">Ajuste</option>
             </select>
           </div>
+          <label className={styles.ocultar}>
+            <input type="checkbox" checked={ocultarAnulados} onChange={(e) => setOcultarAnulados(e.target.checked)} />
+            Ocultar anulados
+          </label>
           <form
             className={styles.buscarDoc}
             onSubmit={(e) => {
@@ -243,11 +285,14 @@ export function MovimientosListPage() {
                 <th>Cantidad</th>
                 <th>Destino / motivo</th>
                 <th>N° documento</th>
+                <th></th>
               </tr>
             </thead>
             <tbody>
-              {filasFiltradas.map(({ mov, producto, linea }) => (
-                <tr key={mov.id}>
+              {filasFiltradas.map((fila) => {
+                const { mov, producto, linea } = fila;
+                return (
+                <tr key={mov.id} className={mov.anulado ? styles.filaAnulada : undefined}>
                   <td>{formatoFecha(mov.fecha)}</td>
                   <td>
                     <span className={claseBadge(tipoDe(mov))}>{ETIQUETA_TIPO[tipoDe(mov)]}</span>
@@ -255,7 +300,13 @@ export function MovimientosListPage() {
                   <td>{producto?.descripcion ?? "—"}</td>
                   <td>{linea?.nombre ?? "—"}</td>
                   <td>{formatoUnidades(mov.cantidad)} u.</td>
-                  <td>{mov.destino ?? mov.motivo ?? "—"}</td>
+                  <td>
+                    {mov.anulado ? (
+                      <span className={styles.motivoAnulacion}>Anulado: {mov.anulado_motivo ?? "sin motivo"}</span>
+                    ) : (
+                      (mov.destino ?? mov.motivo ?? "—")
+                    )}
+                  </td>
                   <td>
                     {mov.numero_documento ? (
                       <button type="button" className={styles.docBtn} onClick={() => abrirComprobante(mov.numero_documento!)}>
@@ -265,8 +316,18 @@ export function MovimientosListPage() {
                       <span className={styles.sinDoc}>—</span>
                     )}
                   </td>
+                  <td>
+                    {mov.anulado ? (
+                      <span className={styles.badgeAnulado}>Anulado</span>
+                    ) : (
+                      <button type="button" className={styles.anularBtn} onClick={() => setAnulando(fila)}>
+                        Anular
+                      </button>
+                    )}
+                  </td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
           {!cargando && filasFiltradas.length === 0 && (
@@ -275,17 +336,14 @@ export function MovimientosListPage() {
           {cargando && <p className={styles.vacio}>Cargando...</p>}
         </div>
       </div>
+      {anulando && (
+        <AnularDialog resumen={resumenAnulacion(anulando)} onConfirmar={confirmarAnulacion} onCancelar={() => setAnulando(null)} />
+      )}
     </div>
   );
 }
 
-interface FilaComprobante {
-  mov: MovimientoTerminado;
-  producto?: ProductoTerminado;
-  linea?: Linea;
-}
-
-function Comprobante({ numero, filas, generadoPor }: { numero: string; filas: FilaComprobante[]; generadoPor: string }) {
+function Comprobante({ numero, filas, anuladas, generadoPor }: { numero: string; filas: Fila[]; anuladas: number; generadoPor: string }) {
   const tipos = new Set(filas.map(({ mov }) => tipoDe(mov)));
   const tituloDocumento =
     tipos.size > 1
@@ -364,6 +422,12 @@ function Comprobante({ numero, filas, generadoPor }: { numero: string; filas: Fi
           </tr>
         </tfoot>
       </table>
+
+      {anuladas > 0 && (
+        <p className={styles.notaAnuladas}>
+          Se omitieron {anuladas} línea{anuladas > 1 ? "s" : ""} anulada{anuladas > 1 ? "s" : ""} de este N°.
+        </p>
+      )}
 
       <div className={styles.comprobanteFooter}>
         <span>Generado por {generadoPor || "—"}</span>

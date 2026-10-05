@@ -85,10 +85,10 @@ snapshotsRouter.get("/esperados", requireRole("admin"), async (req, res) => {
           .order("tanque_id")
           .range(a, b)
       ),
-      fetchAll<{ tanque_id: string; fecha: string; tipo: string; litros: number }>((a, b) =>
+      fetchAll<{ tanque_id: string; fecha: string; tipo: string; litros: number; anulado: boolean }>((a, b) =>
         supabase
           .from("movimientos_liquidos")
-          .select("tanque_id, fecha, tipo, litros")
+          .select("tanque_id, fecha, tipo, litros, anulado")
           .lte("fecha", fecha.data)
           .order("fecha")
           .order("id")
@@ -104,7 +104,7 @@ snapshotsRouter.get("/esperados", requireRole("admin"), async (req, res) => {
       lecturas.set(s.tanque_id, lista);
     }
     const movsPorTanque = new Map<string, typeof movimientos>();
-    for (const m of movimientos) {
+    for (const m of movimientos.filter((x) => !x.anulado)) {
       const lista = movsPorTanque.get(m.tanque_id) ?? [];
       lista.push(m);
       movsPorTanque.set(m.tanque_id, lista);

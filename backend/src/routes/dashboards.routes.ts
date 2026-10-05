@@ -50,7 +50,7 @@ dashboardsRouter.get("/stock", requireRole("socio"), async (req, res) => {
   // por línea" dentro de cada destino (igual al SAL.por_destino[x].lineas original).
   const salidasPorDestino = new Map<string, { total: number; porLinea: Map<string, number> }>();
 
-  for (const mov of movimientos as MovimientoTerminado[]) {
+  for (const mov of (movimientos as MovimientoTerminado[]).filter((m) => !m.anulado)) {
     const signo = mov.tipo === "entrada" ? 1 : -1;
     stockPorProducto.set(mov.producto_id, (stockPorProducto.get(mov.producto_id) ?? 0) + signo * mov.cantidad);
 
@@ -186,7 +186,7 @@ dashboardsRouter.get("/comparativo", requireRole("socio"), async (req, res) => {
     return res.status(500).json({ error: (prodError ?? movError ?? lineasError)?.message });
   }
 
-  const todosMovimientos = movimientos as MovimientoTerminado[];
+  const todosMovimientos = (movimientos as MovimientoTerminado[]).filter((m) => !m.anulado);
   // Sin fecha_corte explícito, se ancla a la fecha real más reciente cargada
   // (no "hoy") — si el último movimiento real es del 31/08, comparar contra
   // "hoy" siempre daría variación 0 porque no hay nada registrado después.
@@ -277,16 +277,16 @@ dashboardsRouter.get("/liquidos", requireRole("socio"), async (_req, res) => {
   // mas lo que se movio despues (un tanque sin corte, como un lote recien creado,
   // cuenta todos sus movimientos). Un movimiento con la misma fecha del corte se
   // considera ya incluido en esa medicion.
-  let movimientosLiquidos: { tanque_id: string; fecha: string; tipo: string; litros: number }[];
+  let movimientosLiquidos: { tanque_id: string; fecha: string; tipo: string; litros: number; anulado: boolean }[];
   try {
     movimientosLiquidos = await fetchAll((a, b) =>
-      supabase.from("movimientos_liquidos").select("tanque_id, fecha, tipo, litros").order("fecha").order("id").range(a, b)
+      supabase.from("movimientos_liquidos").select("tanque_id, fecha, tipo, litros, anulado").order("fecha").order("id").range(a, b)
     );
   } catch (e) {
     return res.status(500).json({ error: (e as Error).message });
   }
   const movimientosPorTanque = new Map<string, { fecha: string; firmado: number }[]>();
-  for (const m of movimientosLiquidos) {
+  for (const m of movimientosLiquidos.filter((x) => !x.anulado)) {
     const lista = movimientosPorTanque.get(m.tanque_id) ?? [];
     lista.push({ fecha: m.fecha, firmado: (m.tipo === "ingreso" ? 1 : -1) * Number(m.litros) });
     movimientosPorTanque.set(m.tanque_id, lista);

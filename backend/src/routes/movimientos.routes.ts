@@ -2,6 +2,7 @@ import { Router } from "express";
 import { z } from "zod";
 import { supabase } from "../config/supabaseClient.js";
 import { requireRole } from "../middleware/requireRole.js";
+import { anularMovimiento } from "./anularMovimiento.js";
 
 export const movimientosRouter = Router();
 
@@ -45,6 +46,8 @@ movimientosRouter.get("/", requireRole("socio"), async (req, res) => {
   if (error) return res.status(500).json({ error: error.message });
   res.json(data);
 });
+
+movimientosRouter.patch("/:id/anular", requireRole("admin"), anularMovimiento("movimientos_terminados"));
 
 movimientosRouter.post("/", requireRole("admin"), async (req, res) => {
   const parsed = movimientoSchema.safeParse(req.body);
