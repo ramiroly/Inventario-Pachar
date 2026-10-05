@@ -122,6 +122,19 @@
   border: 1px solid var(--pachar-line);
   background: #fff;
 }
+.opcionesDoc {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  border: 1px solid #ecd9a8;
+  border-radius: 12px;
+  background: #fbf2d8;
+  color: #6b5110;
+  font-size: 14px;
+}
 .celdaDetalle {
   min-width: 190px;
   max-width: 300px;

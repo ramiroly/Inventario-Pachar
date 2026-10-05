@@ -27,6 +27,9 @@ function tipoDe(m: MovimientoTerminado): "entrada" | "salida" | "ajuste" {
 
 const formatoUnidades = (n: number) => n.toLocaleString("es-PE");
 
+// "EG07 - 520", "eg07-520" y "EG07 -520" son el mismo número.
+const normalizarNumero = (n: string) => n.replace(/\s+/g, "").toUpperCase();
+
 function formatoFecha(iso: string) {
   const [a, m, d] = iso.split("-");
   return `${d}/${m}/${a}`;
@@ -43,6 +46,7 @@ export function MovimientosListPage() {
   const [texto, setTexto] = useState("");
   const [tipo, setTipo] = useState<FiltroTipo>("todos");
   const [buscarDoc, setBuscarDoc] = useState("");
+  const [opciones, setOpciones] = useState<string[] | null>(null);
   const [params, setParams] = useSearchParams();
   const docSeleccionado = params.get("doc");
 
@@ -96,7 +100,29 @@ export function MovimientosListPage() {
   function abrirComprobante(numero: string) {
     const doc = numero.trim();
     if (!doc) return;
+    setOpciones(null);
     setParams({ doc });
+  }
+
+  // Basta escribir el número ("520") para encontrar "EG07 - 520". Si hay más de un
+  // registro con ese número (por ejemplo otra serie), se deja elegir.
+  function buscarComprobante(escrito: string) {
+    const t = normalizarNumero(escrito);
+    if (!t) return;
+    const candidatos = [
+      ...new Set(
+        movimientos
+          .map((m) => m.numero_documento)
+          .filter((n): n is string => !!n)
+          .filter((n) => {
+            const x = normalizarNumero(n);
+            return x === t || x.endsWith(`-${t}`);
+          })
+      ),
+    ];
+    if (candidatos.length === 1) abrirComprobante(candidatos[0]);
+    else if (candidatos.length === 0) abrirComprobante(escrito);
+    else setOpciones(candidatos);
   }
 
   function cerrarComprobante() {
@@ -170,7 +196,7 @@ export function MovimientosListPage() {
             className={styles.buscarDoc}
             onSubmit={(e) => {
               e.preventDefault();
-              abrirComprobante(buscarDoc);
+              buscarComprobante(buscarDoc);
             }}
           >
             <div className={styles.field}>
@@ -181,9 +207,12 @@ export function MovimientosListPage() {
                 id="buscarDoc"
                 className={styles.input}
                 type="text"
-                placeholder="Ej. 200"
+                placeholder="Ej. 520"
                 value={buscarDoc}
-                onChange={(e) => setBuscarDoc(e.target.value)}
+                onChange={(e) => {
+                  setBuscarDoc(e.target.value);
+                  setOpciones(null);
+                }}
               />
             </div>
             <button type="submit" className={styles.botonSecundario} disabled={!buscarDoc.trim()}>
@@ -191,6 +220,17 @@ export function MovimientosListPage() {
             </button>
           </form>
         </div>
+
+        {opciones && (
+          <div className={styles.opcionesDoc}>
+            <span>Hay varios registros con ese número. Elige cuál ver:</span>
+            {opciones.map((o) => (
+              <button key={o} type="button" className={styles.botonSecundario} onClick={() => abrirComprobante(o)}>
+                {o}
+              </button>
+            ))}
+          </div>
+        )}
 
         <div className={styles.tableWrap}>
           <table className={styles.table}>

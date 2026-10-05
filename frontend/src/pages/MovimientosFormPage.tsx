@@ -29,6 +29,8 @@ export function MovimientosFormPage() {
   const [modo, setModo] = useState<Modo>("salida");
   const [cantidad, setCantidad] = useState("");
   const [numeroDocumento, setNumeroDocumento] = useState("");
+  const [serie, setSerie] = useState<"EG07" | "otros">("EG07");
+  const [numeroGuia, setNumeroGuia] = useState("");
   const [conteo, setConteo] = useState("");
   const [motivo, setMotivo] = useState("");
   const [destino, setDestino] = useState<string>(DESTINOS_HABITUALES[0]);
@@ -94,6 +96,10 @@ export function MovimientosFormPage() {
     setMotivo("");
   }
 
+  // Las salidas llevan guía de remisión: con la serie EG07 se guarda "EG07 - 520";
+  // con "Otros" se guarda tal cual lo escrito.
+  const guiaCompleta = serie === "EG07" ? (numeroGuia.trim() ? `EG07 - ${numeroGuia.trim()}` : "") : numeroGuia.trim();
+
   async function guardarMovimiento() {
     const unidades = Number(cantidad);
     if (!Number.isInteger(unidades) || unidades < 1) {
@@ -106,7 +112,7 @@ export function MovimientosFormPage() {
       tipo: modo,
       cantidad: unidades,
       destino: modo === "salida" ? destino : null,
-      numero_documento: numeroDocumento.trim() || null,
+      numero_documento: (modo === "salida" ? guiaCompleta : numeroDocumento.trim()) || null,
     });
     const accion = modo === "salida" ? "Salida" : "Entrada";
     setMensaje(`${accion} registrada: ${formatoUnidades(unidades)} u. de ${productoSel?.descripcion ?? "el producto"}.`);
@@ -263,10 +269,49 @@ export function MovimientosFormPage() {
               )}
             </div>
 
-            {modo !== "ajuste" && (
+            {modo === "salida" && (
+              <div className={styles.field}>
+                <label htmlFor="numeroGuia" className={styles.label}>
+                  N° de guía de remisión (opcional)
+                </label>
+                <div style={{ display: "grid", gridTemplateColumns: "130px 1fr", gap: 10 }}>
+                  <select
+                    id="serie"
+                    aria-label="Serie de la guía"
+                    className={styles.input}
+                    value={serie}
+                    onChange={(e) => {
+                      setSerie(e.target.value as "EG07" | "otros");
+                      setNumeroGuia("");
+                    }}
+                  >
+                    <option value="EG07">EG07</option>
+                    <option value="otros">Otros</option>
+                  </select>
+                  <input
+                    id="numeroGuia"
+                    className={styles.input}
+                    type="text"
+                    inputMode={serie === "EG07" ? "numeric" : "text"}
+                    autoComplete="off"
+                    maxLength={50}
+                    placeholder={serie === "EG07" ? "Ej. 520" : "Número completo, ej. EG08 - 12"}
+                    value={numeroGuia}
+                    onChange={(e) => setNumeroGuia(serie === "EG07" ? e.target.value.replace(/\D/g, "") : e.target.value)}
+                  />
+                </div>
+                <p className={styles.hint}>
+                  {guiaCompleta
+                    ? `Se guardará como: ${guiaCompleta}`
+                    : "Usa el mismo número en varios productos para agruparlos en una sola guía."}
+                </p>
+              </div>
+            )}
+
+            {modo === "entrada" && (
               <div className={styles.field}>
                 <label htmlFor="numeroDocumento" className={styles.label}>
-                  {modo === "salida" ? "N° de guía de remisión (opcional)" : "N° de producción / orden (opcional)"}
+                  N° de producción / orden (opcional)
                 </label>
                 <input
                   id="numeroDocumento"
