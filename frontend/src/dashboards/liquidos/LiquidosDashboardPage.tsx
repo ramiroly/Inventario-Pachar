@@ -68,6 +68,10 @@ export function LiquidosDashboardPage() {
 
   const { ordenadas, conTerminado, totalTerm, totalPrev, netDelta, topLinea, ocupProm, maxUp, maxDown, lineasActivas } = computed;
 
+  const hayMovimientos = data.lineas.some(
+    (l) => l.terminados.some((t) => t.neto_desde_corte !== 0) || l.subs.some((s) => s.neto_desde_corte !== 0)
+  );
+
   const alertItems: Array<{ text: string; className: string }> = [];
   for (const l of conTerminado) {
     const t = l.terminado!;
@@ -112,9 +116,21 @@ export function LiquidosDashboardPage() {
       <>
         <div className={styles.fttTitle}>{t.nombre}</div>
         <div className={styles.fttRow}>
-          <span className={styles.fttLbl}>Stock {data.fecha_corte}</span>
+          <span className={styles.fttLbl}>
+            Stock {data.fecha_corte}
+            {t.neto_desde_corte !== 0 ? " + mov." : ""}
+          </span>
           <span className={styles.fttVal}>{formatNum(t.litros_actual)} L</span>
         </div>
+        {t.neto_desde_corte !== 0 && (
+          <div className={styles.fttRow}>
+            <span className={styles.fttLbl}>Mov. desde el corte</span>
+            <span className={styles.fttVal}>
+              {t.neto_desde_corte > 0 ? "+" : ""}
+              {formatNum(t.neto_desde_corte)} L
+            </span>
+          </div>
+        )}
         {t.litros_anterior > 0 && (
           <div className={styles.fttRow}>
             <span className={styles.fttLbl}>Stock {data.fecha_corte_anterior}</span>
@@ -151,9 +167,21 @@ export function LiquidosDashboardPage() {
           {s.nombre}
         </div>
         <div className={styles.fttRow}>
-          <span className={styles.fttLbl}>Stock {data.fecha_corte}</span>
+          <span className={styles.fttLbl}>
+            Stock {data.fecha_corte}
+            {s.neto_desde_corte !== 0 ? " + mov." : ""}
+          </span>
           <span className={styles.fttVal}>{formatNum(s.litros_actual)} L</span>
         </div>
+        {s.neto_desde_corte !== 0 && (
+          <div className={styles.fttRow}>
+            <span className={styles.fttLbl}>Mov. desde el corte</span>
+            <span className={styles.fttVal}>
+              {s.neto_desde_corte > 0 ? "+" : ""}
+              {formatNum(s.neto_desde_corte)} L
+            </span>
+          </div>
+        )}
         {!isNew && s.litros_anterior > 0 && (
           <div className={styles.fttRow}>
             <span className={styles.fttLbl}>Stock {data.fecha_corte_anterior}</span>
@@ -187,6 +215,7 @@ export function LiquidosDashboardPage() {
           <h1>Dashboard — Stock de Líquidos</h1>
           <p>
             Destilería Pachar &middot; Corte: {data.fecha_corte} &middot; Comparativa vs {data.fecha_corte_anterior}{" "}
+            {hayMovimientos ? <>&middot; Incluye movimientos posteriores al corte </> : null}
             &middot; Uso interno
           </p>
         </div>

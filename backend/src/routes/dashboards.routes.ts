@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { supabase } from "../config/supabaseClient.js";
+import { fetchAll } from "../db/fetchAll.js";
 import { requireRole } from "../middleware/requireRole.js";
 import { calcularCoberturaSemanas, calcularSemaforo } from "../services/coverage.service.js";
 import { calcularCajasYSueltas } from "../services/packaging.service.js";
@@ -272,6 +273,25 @@ dashboardsRouter.get("/liquidos", requireRole("socio"), async (_req, res) => {
     return res.status(500).json({ error: (tanquesError ?? snapshotsError ?? lineasError)?.message });
   }
 
+  // Movimientos de liquidos: el nivel mostrado es el ultimo corte medido de cada tanque
+  // mas lo que se movio despues (un tanque sin corte, como un lote recien creado,
+  // cuenta todos sus movimientos). Un movimiento con la misma fecha del corte se
+  // considera ya incluido en esa medicion.
+  let movimientosLiquidos: { tanque_id: string; fecha: string; tipo: string; litros: number }[];
+  try {
+    movimientosLiquidos = await fetchAll((a, b) =>
+      supabase.from("movimientos_liquidos").select("tanque_id, fecha, tipo, litros").order("fecha").order("id").range(a, b)
+    );
+  } catch (e) {
+    return res.status(500).json({ error: (e as Error).message });
+  }
+  const movimientosPorTanque = new Map<string, { fecha: string; firmado: number }[]>();
+  for (const m of movimientosLiquidos) {
+    const lista = movimientosPorTanque.get(m.tanque_id) ?? [];
+    lista.push({ fecha: m.fecha, firmado: (m.tipo === "ingreso" ? 1 : -1) * Number(m.litros) });
+    movimientosPorTanque.set(m.tanque_id, lista);
+  }
+
   const snapshotsPorTanque = new Map<string, typeof snapshots>();
   const fechasCorte = new Set<string>();
   for (const snap of snapshots ?? []) {
@@ -282,9 +302,19 @@ dashboardsRouter.get("/liquidos", requireRole("socio"), async (_req, res) => {
   }
   const [fechaCorte, fechaAnterior] = [...fechasCorte].sort().reverse();
 
+  const redondear = (n: number) => Math.round(n * 1000) / 1000;
+
   function litrosDe(tanqueId: string) {
     const historicos = snapshotsPorTanque.get(tanqueId) ?? [];
-    return { actual: historicos[0]?.litros ?? 0, anterior: historicos[1]?.litros ?? 0 };
+    const base = historicos[0];
+    const neto = (movimientosPorTanque.get(tanqueId) ?? [])
+      .filter((m) => !base || m.fecha > base.fecha_corte)
+      .reduce((acc, m) => acc + m.firmado, 0);
+    return {
+      actual: Math.max(0, redondear(Number(base?.litros ?? 0) + neto)),
+      anterior: Number(historicos[1]?.litros ?? 0),
+      neto: redondear(neto),
+    };
   }
 
   const lineasPorId = new Map((lineas ?? []).map((l) => [l.id, l]));
@@ -307,7 +337,7 @@ dashboardsRouter.get("/liquidos", requireRole("socio"), async (_req, res) => {
     const subsTanques = tanquesLinea.filter((t) => t.tipo === "subproducto");
 
     const terminados = terminadosTanques.map((t) => {
-      const { actual, anterior } = litrosDe(t.id);
+      const { actual, anterior, neto } = litrosDe(t.id);
       const { delta, loteNuevo } = compararLiquido(actual, anterior);
       return {
         tanque_id: t.id,
@@ -318,6 +348,7 @@ dashboardsRouter.get("/liquidos", requireRole("socio"), async (_req, res) => {
         capacidad_litros: t.capacidad_litros,
         delta,
         lote_nuevo: loteNuevo,
+        neto_desde_corte: neto,
       };
     });
 
@@ -334,11 +365,12 @@ dashboardsRouter.get("/liquidos", requireRole("socio"), async (_req, res) => {
         capacidad_litros: capacidades.length > 0 ? capacidades.reduce((acc, c) => acc + c, 0) : null,
         delta,
         lote_nuevo: loteNuevo,
+        neto_desde_corte: redondear(terminados.reduce((acc, t) => acc + t.neto_desde_corte, 0)),
       };
     })();
 
     const subs = subsTanques.map((t) => {
-      const { actual, anterior } = litrosDe(t.id);
+      const { actual, anterior, neto } = litrosDe(t.id);
       const { delta, loteNuevo } = compararLiquido(actual, anterior);
       return {
         tanque_id: t.id,
@@ -348,6 +380,7 @@ dashboardsRouter.get("/liquidos", requireRole("socio"), async (_req, res) => {
         capacidad_litros: t.capacidad_litros,
         delta,
         lote_nuevo: loteNuevo,
+        neto_desde_corte: neto,
       };
     });
 

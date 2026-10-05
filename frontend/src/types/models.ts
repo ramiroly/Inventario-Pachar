@@ -166,6 +166,8 @@ export interface TanqueDashboard {
   capacidad_litros: number | null;
   delta: number;
   lote_nuevo: boolean;
+  // Litros que entraron (+) o salieron (−) por movimientos después del último corte.
+  neto_desde_corte: number;
 }
 
 export interface TanqueTerminadoDashboard extends TanqueDashboard {
