@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { supabase } from "../config/supabaseClient.js";
 import { fetchAll } from "../db/fetchAll.js";
+import { todosLosMovimientosTerminados } from "../db/movimientosTerminados.js";
 import { requireRole } from "../middleware/requireRole.js";
 import { calcularCoberturaSemanas, calcularSemaforo } from "../services/coverage.service.js";
 import { calcularCajasYSueltas } from "../services/packaging.service.js";
@@ -32,7 +33,7 @@ dashboardsRouter.get("/stock", requireRole("socio"), async (req, res) => {
   const [{ data: productos, error: prodError }, { data: movimientos, error: movError }, { data: lineas, error: lineasError }] =
     await Promise.all([
       supabase.from("productos_terminados").select("*"),
-      supabase.from("movimientos_terminados").select("*"),
+      todosLosMovimientosTerminados(),
       supabase.from("lineas").select("*"),
     ]);
 
@@ -179,7 +180,7 @@ dashboardsRouter.get("/comparativo", requireRole("socio"), async (req, res) => {
   const [{ data: productos, error: prodError }, { data: movimientos, error: movError }, { data: lineas, error: lineasError }] =
     await Promise.all([
       supabase.from("productos_terminados").select("*"),
-      supabase.from("movimientos_terminados").select("*"),
+      todosLosMovimientosTerminados(),
       supabase.from("lineas").select("*"),
     ]);
   if (prodError || movError || lineasError) {

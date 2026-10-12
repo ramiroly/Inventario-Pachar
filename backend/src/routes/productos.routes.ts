@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
 import { supabase } from "../config/supabaseClient.js";
+import { todosLosMovimientosTerminados } from "../db/movimientosTerminados.js";
 import { requireRole } from "../middleware/requireRole.js";
 
 export const productosRouter = Router();
@@ -27,8 +28,8 @@ productosRouter.get("/", requireRole("socio"), async (req, res) => {
 // Stock actual por producto (entradas - salidas, incluyendo ajustes). Lo usa el
 // formulario de ajuste por conteo fisico para mostrar la diferencia.
 productosRouter.get("/stock", requireRole("socio"), async (_req, res) => {
-  const { data, error } = await supabase.from("movimientos_terminados").select("producto_id, tipo, cantidad, anulado");
-  if (error) return res.status(500).json({ error: error.message });
+  const { data, error } = await todosLosMovimientosTerminados();
+  if (error || !data) return res.status(500).json({ error: error?.message ?? "No se pudieron leer los movimientos" });
 
   const stock: Record<string, number> = {};
   for (const mov of data.filter((m) => !m.anulado)) {

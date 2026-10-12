@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
 import { supabase } from "../config/supabaseClient.js";
+import { fetchAll } from "../db/fetchAll.js";
 import { requireRole } from "../middleware/requireRole.js";
 import { anularMovimiento } from "./anularMovimiento.js";
 
@@ -36,15 +37,18 @@ const movimientoSchema = z
 
 movimientosRouter.get("/", requireRole("socio"), async (req, res) => {
   const { producto_id, desde, hasta } = req.query;
-  let query = supabase.from("movimientos_terminados").select("*").order("fecha", { ascending: false });
-
-  if (typeof producto_id === "string") query = query.eq("producto_id", producto_id);
-  if (typeof desde === "string") query = query.gte("fecha", desde);
-  if (typeof hasta === "string") query = query.lte("fecha", hasta);
-
-  const { data, error } = await query;
-  if (error) return res.status(500).json({ error: error.message });
-  res.json(data);
+  try {
+    const data = await fetchAll((a, b) => {
+      let query = supabase.from("movimientos_terminados").select("*");
+      if (typeof producto_id === "string") query = query.eq("producto_id", producto_id);
+      if (typeof desde === "string") query = query.gte("fecha", desde);
+      if (typeof hasta === "string") query = query.lte("fecha", hasta);
+      return query.order("fecha", { ascending: false }).order("id").range(a, b);
+    });
+    res.json(data);
+  } catch (e) {
+    res.status(500).json({ error: (e as Error).message });
+  }
 });
 
 movimientosRouter.patch("/:id/anular", requireRole("admin"), anularMovimiento("movimientos_terminados"));
