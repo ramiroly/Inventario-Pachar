@@ -23,8 +23,9 @@ const LC: Record<string, string> = {
 };
 const FMT_COLORS = { f750: "#1A5276", f375: "#117A65", f50: "#D4811A" };
 
+// Las versiones "inglés" (exportación, 750 ml) no se suman a la barra de 750 ml.
 function isF750(p: ProductoDashboard) {
-  return p.formato === 750;
+  return p.formato === 750 && !p.es_exportacion;
 }
 function isF375(p: ProductoDashboard) {
   return p.formato === 375;

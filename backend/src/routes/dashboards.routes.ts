@@ -10,9 +10,13 @@ import type { MovimientoTerminado, ProductoTerminado } from "../types/models.js"
 
 export const dashboardsRouter = Router();
 
-// Garrafas de 4 L: se muestran en el desglose y en el registro, pero no cuentan en los
-// graficos ni calculos de despachos y cobertura (una garrafa no equivale a una botella).
+// Garrafas de 4 L y versiones "ingles" (exportacion en 750 ml): se muestran en el desglose,
+// la tabla y el registro, pero no cuentan en los graficos ni en los calculos de despachos
+// y cobertura, para mantener los graficos limpios.
 const FORMATO_GARRAFA = 4000;
+function fueraDeGraficos(p: { formato: number; es_exportacion: boolean }) {
+  return p.formato === FORMATO_GARRAFA || (p.es_exportacion && p.formato === 750);
+}
 
 function diasEntre(desde: string, hasta: string): number {
   const ms = new Date(hasta).getTime() - new Date(desde).getTime();
@@ -61,8 +65,9 @@ dashboardsRouter.get("/stock", requireRole("socio"), async (req, res) => {
 
     // Los ajustes por conteo fisico corrigen el stock pero no son despachos; las garrafas
     // tampoco cuentan en los despachos del dashboard.
-    const esGarrafa = productosPorId.get(mov.producto_id)?.formato === FORMATO_GARRAFA;
-    if (mov.tipo === "salida" && !mov.es_ajuste && !esGarrafa && mov.fecha >= desde && mov.fecha <= hasta) {
+    const productoMov = productosPorId.get(mov.producto_id);
+    const fuera = !!productoMov && fueraDeGraficos(productoMov);
+    if (mov.tipo === "salida" && !mov.es_ajuste && !fuera && mov.fecha >= desde && mov.fecha <= hasta) {
       salidasPeriodoPorProducto.set(
         mov.producto_id,
         (salidasPeriodoPorProducto.get(mov.producto_id) ?? 0) + mov.cantidad
@@ -104,7 +109,7 @@ dashboardsRouter.get("/stock", requireRole("socio"), async (req, res) => {
     const stock = stockPorProducto.get(producto.id) ?? 0;
     const salidasPeriodo = salidasPeriodoPorProducto.get(producto.id) ?? 0;
 
-    if (producto.formato !== FORMATO_GARRAFA) {
+    if (!fueraDeGraficos(producto)) {
       stockPorLinea.set(producto.linea_id, (stockPorLinea.get(producto.linea_id) ?? 0) + stock);
       salidasPeriodoPorLinea.set(
         producto.linea_id,
@@ -130,7 +135,7 @@ dashboardsRouter.get("/stock", requireRole("socio"), async (req, res) => {
       cobertura_semanas: coberturaSemanas,
       semaforo: calcularSemaforo(coberturaSemanas),
       // Matacuy 700ml exportación: no se grafica en el apilado principal.
-      excluir_grafico_principal: producto.formato === 700 && producto.es_exportacion,
+      excluir_grafico_principal: (producto.formato === 700 && producto.es_exportacion) || fueraDeGraficos(producto),
     });
   }
 
@@ -238,12 +243,13 @@ dashboardsRouter.get("/comparativo", requireRole("socio"), async (req, res) => {
       stock_actual: actual,
       stock_anterior: anterior,
       variacion: actual - anterior,
+      fuera_de_graficos: fueraDeGraficos(producto),
     };
   });
 
   const totalesPorLineaMap = new Map<string, { linea_id: string; nombre: string; stock_actual: number; stock_anterior: number }>();
   for (const item of detallePorFormato) {
-    if (item.formato === FORMATO_GARRAFA) continue;
+    if (item.fuera_de_graficos) continue;
     const entry = totalesPorLineaMap.get(item.linea_id) ?? {
       linea_id: item.linea_id,
       nombre: item.linea,

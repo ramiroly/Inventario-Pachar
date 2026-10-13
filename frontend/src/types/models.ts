@@ -146,6 +146,8 @@ export interface DetalleFormatoComparativo {
   stock_actual: number;
   stock_anterior: number;
   variacion: number;
+  // Garrafas e "inglés": van en la tabla pero no en los gráficos de barras.
+  fuera_de_graficos: boolean;
 }
 
 export interface TotalPorLinea {
