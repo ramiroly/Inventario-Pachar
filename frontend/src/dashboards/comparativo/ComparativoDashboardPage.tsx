@@ -94,7 +94,9 @@ export function ComparativoDashboardPage() {
   const netDelta = totalActual - totalAnterior;
 
   const productosPorLinea = (linea: string) =>
-    data.detalle_por_formato.filter((d) => d.linea === linea && (d.stock_actual > 0 || d.stock_anterior > 0));
+    data.detalle_por_formato.filter(
+      (d) => d.linea === linea && d.formato !== 4000 && (d.stock_actual > 0 || d.stock_anterior > 0)
+    );
 
   const tblList = data.detalle_por_formato.filter((d) => {
     if (tblFiltro === "up") return d.variacion > 0;

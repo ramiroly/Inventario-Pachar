@@ -300,7 +300,7 @@ export function MovimientosListPage() {
                   <td>{producto?.descripcion ?? "—"}</td>
                   <td>{linea?.nombre ?? "—"}</td>
                   <td>{formatoUnidades(mov.cantidad)} u.</td>
-                  <td>
+                  <td className={styles.celdaDetalle}>
                     {mov.anulado ? (
                       <span className={styles.motivoAnulacion}>Anulado: {mov.anulado_motivo ?? "sin motivo"}</span>
                     ) : (

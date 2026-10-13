@@ -10,6 +10,10 @@ import type { MovimientoTerminado, ProductoTerminado } from "../types/models.js"
 
 export const dashboardsRouter = Router();
 
+// Garrafas de 4 L: se muestran en el desglose y en el registro, pero no cuentan en los
+// graficos ni calculos de despachos y cobertura (una garrafa no equivale a una botella).
+const FORMATO_GARRAFA = 4000;
+
 function diasEntre(desde: string, hasta: string): number {
   const ms = new Date(hasta).getTime() - new Date(desde).getTime();
   return Math.max(ms / (1000 * 60 * 60 * 24), 1);
@@ -55,8 +59,10 @@ dashboardsRouter.get("/stock", requireRole("socio"), async (req, res) => {
     const signo = mov.tipo === "entrada" ? 1 : -1;
     stockPorProducto.set(mov.producto_id, (stockPorProducto.get(mov.producto_id) ?? 0) + signo * mov.cantidad);
 
-    // Los ajustes por conteo fisico corrigen el stock pero no son despachos.
-    if (mov.tipo === "salida" && !mov.es_ajuste && mov.fecha >= desde && mov.fecha <= hasta) {
+    // Los ajustes por conteo fisico corrigen el stock pero no son despachos; las garrafas
+    // tampoco cuentan en los despachos del dashboard.
+    const esGarrafa = productosPorId.get(mov.producto_id)?.formato === FORMATO_GARRAFA;
+    if (mov.tipo === "salida" && !mov.es_ajuste && !esGarrafa && mov.fecha >= desde && mov.fecha <= hasta) {
       salidasPeriodoPorProducto.set(
         mov.producto_id,
         (salidasPeriodoPorProducto.get(mov.producto_id) ?? 0) + mov.cantidad
@@ -98,11 +104,13 @@ dashboardsRouter.get("/stock", requireRole("socio"), async (req, res) => {
     const stock = stockPorProducto.get(producto.id) ?? 0;
     const salidasPeriodo = salidasPeriodoPorProducto.get(producto.id) ?? 0;
 
-    stockPorLinea.set(producto.linea_id, (stockPorLinea.get(producto.linea_id) ?? 0) + stock);
-    salidasPeriodoPorLinea.set(
-      producto.linea_id,
-      (salidasPeriodoPorLinea.get(producto.linea_id) ?? 0) + salidasPeriodo
-    );
+    if (producto.formato !== FORMATO_GARRAFA) {
+      stockPorLinea.set(producto.linea_id, (stockPorLinea.get(producto.linea_id) ?? 0) + stock);
+      salidasPeriodoPorLinea.set(
+        producto.linea_id,
+        (salidasPeriodoPorLinea.get(producto.linea_id) ?? 0) + salidasPeriodo
+      );
+    }
 
     const { cajas, sueltas } = calcularCajasYSueltas(stock, producto.upb);
     const coberturaSemanas = calcularCoberturaSemanas(stock, salidasPeriodo, diasPeriodo);
@@ -235,6 +243,7 @@ dashboardsRouter.get("/comparativo", requireRole("socio"), async (req, res) => {
 
   const totalesPorLineaMap = new Map<string, { linea_id: string; nombre: string; stock_actual: number; stock_anterior: number }>();
   for (const item of detallePorFormato) {
+    if (item.formato === FORMATO_GARRAFA) continue;
     const entry = totalesPorLineaMap.get(item.linea_id) ?? {
       linea_id: item.linea_id,
       nombre: item.linea,
