@@ -1,0 +1,147 @@
+.hoja {
+  background: #fff;
+  border: 1px solid var(--pachar-line);
+  border-radius: 16px;
+  padding: 36px 40px;
+  font-family: var(--pachar-font-body);
+  color: var(--pachar-ink);
+}
+.hoja,
+.hoja * {
+  box-sizing: border-box;
+}
+
+.cabecera {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
+  padding-bottom: 20px;
+  margin-bottom: 20px;
+  border-bottom: 2px solid var(--pachar-black);
+}
+.logoCaja {
+  padding: 8px 12px;
+  border-radius: 6px;
+  background: var(--pachar-black);
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+.logo {
+  display: block;
+  height: 34px;
+  width: auto;
+}
+.cabeceraTexto {
+  text-align: right;
+}
+.titulo {
+  margin: 0 0 4px;
+  font-family: var(--pachar-font-display);
+  font-size: 26px;
+}
+.fecha {
+  margin: 0;
+  font-size: 14px;
+  color: var(--pachar-muted);
+}
+.nota {
+  margin: 6px 0 0;
+  font-size: 13px;
+  font-style: italic;
+  color: var(--pachar-muted);
+}
+
+.tablaWrap {
+  overflow-x: auto;
+}
+.tabla {
+  width: 100%;
+  min-width: 460px;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+.tabla th {
+  text-align: left;
+  padding: 9px 10px;
+  border-bottom: 2px solid var(--pachar-black);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--pachar-muted);
+}
+.tabla td {
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--pachar-line);
+}
+.num,
+.tabla th.num {
+  text-align: right;
+  white-space: nowrap;
+}
+.filaLinea td {
+  padding: 12px 10px 6px;
+  border-bottom: 1px solid var(--pachar-ink);
+  border-left: 5px solid;
+  font-family: var(--pachar-font-display);
+  font-size: 16px;
+  font-weight: 700;
+}
+.filaSubtotal td {
+  font-weight: 700;
+  background: rgba(0, 0, 0, 0.04);
+}
+.agotado td {
+  color: #9a9a90;
+}
+.tabla tfoot td {
+  padding-top: 14px;
+  border-bottom: none;
+  border-top: 2px solid var(--pachar-black);
+  font-size: 16px;
+  font-weight: 700;
+}
+.tabla tbody {
+  break-inside: avoid;
+}
+
+@media (max-width: 700px) {
+  .hoja {
+    padding: 20px 14px;
+  }
+  .cabecera {
+    flex-direction: column;
+  }
+  .cabeceraTexto {
+    text-align: left;
+  }
+  .tabla {
+    font-size: 13px;
+  }
+  .tabla td,
+  .tabla th {
+    padding-left: 6px;
+    padding-right: 6px;
+  }
+}
+
+@media print {
+  .hoja {
+    border: none;
+    border-radius: 0;
+    padding: 0;
+  }
+  .tablaWrap {
+    overflow: visible;
+  }
+  .tabla {
+    font-size: 11.5px;
+    min-width: 0;
+  }
+  .tabla td {
+    padding: 4px 8px;
+  }
+  .filaLinea td {
+    padding-top: 9px;
+  }
+}

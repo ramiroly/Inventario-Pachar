@@ -13,6 +13,8 @@ import { MovimientosListPage } from "./pages/MovimientosListPage";
 import { LiquidosCortePage } from "./pages/LiquidosCortePage";
 import { LiquidosMovimientoPage } from "./pages/LiquidosMovimientoPage";
 import { MovimientosLiquidosListPage } from "./pages/MovimientosLiquidosListPage";
+import { StockActualPage } from "./pages/StockActualPage";
+import { CorteStockPublicoPage } from "./pages/CorteStockPublicoPage";
 
 // Página de entrada ("/"): a los admin los lleva directo a Cargar movimiento
 // (su primera tarea del día); a los socios, a Stock.
@@ -112,6 +114,16 @@ export default function App() {
           }
         />
         <Route path="/movimientos" element={<Navigate to="/movimientos/nuevo" replace />} />
+        <Route
+          path="/movimientos/stock-actual"
+          element={
+            <ProtectedRoute rolRequerido="admin">
+              <StockActualPage />
+            </ProtectedRoute>
+          }
+        />
+        {/* Link publico de un corte guardado: se abre sin iniciar sesion. */}
+        <Route path="/corte/:token" element={<CorteStockPublicoPage />} />
         <Route
           path="/movimientos/registro"
           element={

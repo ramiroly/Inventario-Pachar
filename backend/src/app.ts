@@ -8,6 +8,7 @@ import { tanquesRouter } from "./routes/tanques.routes.js";
 import { snapshotsRouter } from "./routes/snapshots.routes.js";
 import { dashboardsRouter } from "./routes/dashboards.routes.js";
 import { movimientosLiquidosRouter } from "./routes/movimientosLiquidos.routes.js";
+import { cortesStockPublicoRouter, cortesStockRouter } from "./routes/cortesStock.routes.js";
 
 export const app = express();
 
@@ -28,4 +29,6 @@ app.use("/movimientos", movimientosRouter);
 app.use("/tanques", tanquesRouter);
 app.use("/movimientos-liquidos", movimientosLiquidosRouter);
 app.use("/snapshots", snapshotsRouter);
+app.use("/cortes-stock", cortesStockRouter);
+app.use("/publico/corte-stock", cortesStockPublicoRouter);
 app.use("/dashboards", dashboardsRouter);

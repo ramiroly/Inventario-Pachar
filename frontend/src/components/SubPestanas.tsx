@@ -14,6 +14,7 @@ export const SUBPESTANAS_LIQUIDOS: Opcion[] = [
 
 export const SUBPESTANAS_MOVIMIENTOS: Opcion[] = [
   { to: "/movimientos/nuevo", etiqueta: "Movimiento" },
+  { to: "/movimientos/stock-actual", etiqueta: "Stock actual" },
   { to: "/movimientos/registro", etiqueta: "Registro" },
 ];
 
