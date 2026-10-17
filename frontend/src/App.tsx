@@ -15,6 +15,8 @@ import { LiquidosMovimientoPage } from "./pages/LiquidosMovimientoPage";
 import { MovimientosLiquidosListPage } from "./pages/MovimientosLiquidosListPage";
 import { StockActualPage } from "./pages/StockActualPage";
 import { CorteStockPublicoPage } from "./pages/CorteStockPublicoPage";
+import { StockLiquidosActualPage } from "./pages/StockLiquidosActualPage";
+import { CorteLiquidosPublicoPage } from "./pages/CorteLiquidosPublicoPage";
 
 // Página de entrada ("/"): a los admin los lleva directo a Cargar movimiento
 // (su primera tarea del día); a los socios, a Stock.
@@ -113,6 +115,15 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/liquidos/cargar/stock-actual"
+          element={
+            <ProtectedRoute rolRequerido="admin">
+              <StockLiquidosActualPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="/corte-liquidos/:token" element={<CorteLiquidosPublicoPage />} />
         <Route path="/movimientos" element={<Navigate to="/movimientos/nuevo" replace />} />
         <Route
           path="/movimientos/stock-actual"

@@ -9,6 +9,7 @@ import { snapshotsRouter } from "./routes/snapshots.routes.js";
 import { dashboardsRouter } from "./routes/dashboards.routes.js";
 import { movimientosLiquidosRouter } from "./routes/movimientosLiquidos.routes.js";
 import { cortesStockPublicoRouter, cortesStockRouter } from "./routes/cortesStock.routes.js";
+import { cortesLiquidosPublicoRouter, cortesLiquidosRouter } from "./routes/cortesLiquidos.routes.js";
 
 export const app = express();
 
@@ -31,4 +32,6 @@ app.use("/movimientos-liquidos", movimientosLiquidosRouter);
 app.use("/snapshots", snapshotsRouter);
 app.use("/cortes-stock", cortesStockRouter);
 app.use("/publico/corte-stock", cortesStockPublicoRouter);
+app.use("/cortes-liquidos", cortesLiquidosRouter);
+app.use("/publico/corte-liquidos", cortesLiquidosPublicoRouter);
 app.use("/dashboards", dashboardsRouter);

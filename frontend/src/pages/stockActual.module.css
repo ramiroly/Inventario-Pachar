@@ -223,3 +223,14 @@
     background: #fff;
   }
 }
+
+.enlaceTexto {
+  color: var(--pachar-ink);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  white-space: nowrap;
+}
+.enlaceTexto:hover {
+  color: var(--pachar-focus);
+}

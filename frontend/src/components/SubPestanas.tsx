@@ -9,6 +9,7 @@ interface Opcion {
 export const SUBPESTANAS_LIQUIDOS: Opcion[] = [
   { to: "/liquidos/cargar/movimiento", etiqueta: "Movimiento" },
   { to: "/liquidos/cargar/corte", etiqueta: "Corte semanal" },
+  { to: "/liquidos/cargar/stock-actual", etiqueta: "Stock actual" },
   { to: "/liquidos/cargar/registro", etiqueta: "Registro" },
 ];
 

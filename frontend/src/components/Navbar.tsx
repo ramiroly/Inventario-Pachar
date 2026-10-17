@@ -9,8 +9,8 @@ const ETIQUETA_ROL = { admin: "Admin", socio: "Socio" } as const;
 export function Navbar() {
   const { session, rol, loading } = useAuth();
   const { pathname } = useLocation();
-  // El link publico de un corte (/corte/...) se ve limpio, sin menu, aunque haya sesion abierta.
-  if (!session || pathname.startsWith("/corte/")) return null;
+  // El link publico de un corte (/corte/..., /corte-liquidos/...) se ve limpio, sin menu, aunque haya sesion abierta.
+  if (!session || pathname.startsWith("/corte/") || pathname.startsWith("/corte-liquidos/")) return null;
   // Sin rol asignado: solo se puede salir; no se muestran las pestañas.
   const sinRol = !loading && rol === null;
 
