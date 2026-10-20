@@ -3,16 +3,16 @@ import logoCerros from "../assets/logo-cerros.png";
 import { SubPestanas, SUBPESTANAS_LIQUIDOS } from "../components/SubPestanas";
 import { api } from "../lib/api";
 import { mensajeError } from "../lib/errores";
-import { hoyLocal } from "../lib/fechas";
+import { formatoFecha, hoyLocal } from "../lib/fechas";
 import { ordenLinea } from "../lib/lineas";
 import { conSignoLitros, formatoLitros, parseLitros } from "../lib/numeros";
 import type { EsperadoTanque, Linea, ProductoTerminado, TanqueLiquido } from "../types/models";
 import styles from "./movimientos.module.css";
 
-type Direccion = "egreso" | "ingreso";
+type Direccion = "egreso" | "ingreso" | "ajuste";
 type Motivo = "embotellado" | "lote" | "destilacion" | "otro" | "lote-nuevo";
 
-const MOTIVOS: Record<Direccion, { id: Motivo; etiqueta: string }[]> = {
+const MOTIVOS: Record<"egreso" | "ingreso", { id: Motivo; etiqueta: string }[]> = {
   egreso: [
     { id: "embotellado", etiqueta: "Embotellado" },
     { id: "lote", etiqueta: "Consumo para preparar un lote" },
@@ -41,6 +41,7 @@ export function LiquidosMovimientoPage() {
   const [productoId, setProductoId] = useState("");
   const [unidades, setUnidades] = useState("");
   const [litros, setLitros] = useState("");
+  const [medido, setMedido] = useState("");
   const [lineaId, setLineaId] = useState("");
   const [loteTexto, setLoteTexto] = useState("");
   const [capacidad, setCapacidad] = useState("");
@@ -73,6 +74,7 @@ export function LiquidosMovimientoPage() {
   const lineasOrdenadas = useMemo(() => [...lineas].sort((a, b) => ordenLinea(a.nombre) - ordenLinea(b.nombre)), [lineas]);
   const lineaPorId = useMemo(() => new Map(lineas.map((l) => [l.id, l])), [lineas]);
 
+  const esAjuste = direccion === "ajuste";
   const esEmbotellado = direccion === "egreso" && motivo === "embotellado";
   const esLoteNuevo = direccion === "ingreso" && motivo === "lote-nuevo";
 
@@ -111,6 +113,13 @@ export function LiquidosMovimientoPage() {
       ? redondear(saldo + (direccion === "ingreso" ? litrosMov : -litrosMov))
       : null;
 
+  // Ajuste: el nivel real medido contra lo que el sistema calcula hoy.
+  const medidoNum = esAjuste ? parseLitros(medido) : null;
+  const diferencia = esAjuste && saldo !== null && medidoNum !== null ? redondear(medidoNum - saldo) : null;
+  // Un movimiento con fecha igual o anterior a la ultima medicion del tanque se da por incluido en ella.
+  const baseFecha = tanqueSel ? (saldos[tanqueSel.id]?.base_fecha ?? null) : null;
+  const fechaIncluida = !!baseFecha && fecha <= baseFecha;
+
   const loteNormalizado = /^\d+$/.test(loteTexto.trim()) ? `Lote ${loteTexto.trim()}` : loteTexto.trim();
   const lineaLote = lineaPorId.get(lineaId);
   const nombreNuevoTanque =
@@ -118,7 +127,7 @@ export function LiquidosMovimientoPage() {
 
   function cambiarDireccion(d: Direccion) {
     setDireccion(d);
-    setMotivo(MOTIVOS[d][0].id);
+    setMotivo(d === "ajuste" ? "otro" : MOTIVOS[d][0].id);
     setTanqueId("");
     setProductoId("");
     setError(null);
@@ -158,6 +167,30 @@ export function LiquidosMovimientoPage() {
     }
 
     if (!tanqueSel) throw new Error("Selecciona el tanque.");
+
+    if (esAjuste) {
+      if (medidoNum === null) throw new Error("Escribe los litros medidos realmente en el tanque (0 o más).");
+      if (fechaIncluida) {
+        throw new Error(
+          `El ajuste debe tener una fecha posterior a la última medición de este tanque (${formatoFecha(baseFecha!)}). Usa la fecha de hoy.`
+        );
+      }
+      if (diferencia === null || diferencia === 0) throw new Error("Lo medido coincide con el sistema: no hay nada que ajustar.");
+      await api.post("/movimientos-liquidos", {
+        tanque_id: tanqueSel.id,
+        tipo: diferencia > 0 ? "ingreso" : "egreso",
+        motivo: "ajuste",
+        litros: Math.abs(diferencia),
+        fecha,
+        nota: nota.trim() || null,
+      });
+      setMensaje(
+        `Ajuste registrado: ${tanqueSel.nombre} pasó de ${formatoLitros(saldo ?? 0)} a ${formatoLitros(medidoNum)} L (${conSignoLitros(diferencia)}).`
+      );
+      setMedido("");
+      setNota("");
+      return;
+    }
 
     if (esEmbotellado) {
       if (!productoSel) throw new Error("Selecciona el producto embotellado.");
@@ -223,6 +256,9 @@ export function LiquidosMovimientoPage() {
             <li>
               <strong>Ingreso:</strong> litros que entran a un tanque. Un lote nuevo crea su propio tanque.
             </li>
+            <li>
+              <strong>Ajuste:</strong> corrige el nivel de un tanque según lo que mediste realmente.
+            </li>
             <li>Usa el mismo N° de registro en todas las líneas de una operación.</li>
             <li>El corte semanal sigue siendo la medida oficial: aquí solo se calcula lo que debería haber.</li>
           </ul>
@@ -230,13 +266,13 @@ export function LiquidosMovimientoPage() {
 
         <main className={styles.main}>
           <h1 className={styles.titulo}>Movimiento de líquidos</h1>
-          <p className={styles.subtitulo}>Registra una salida o un ingreso de litros en tus tanques.</p>
+          <p className={styles.subtitulo}>Registra una salida, un ingreso o un ajuste de litros en tus tanques.</p>
 
           <form onSubmit={handleSubmit} className={styles.form}>
             <div className={styles.field}>
               <span className={styles.label}>Tipo de movimiento</span>
-              <div className={styles.segmented} role="radiogroup" aria-label="Tipo de movimiento" style={{ gridTemplateColumns: "1fr 1fr" }}>
-                {(["egreso", "ingreso"] as const).map((d) => (
+              <div className={styles.segmented} role="radiogroup" aria-label="Tipo de movimiento" style={{ gridTemplateColumns: "1fr 1fr 1fr" }}>
+                {(["egreso", "ingreso", "ajuste"] as const).map((d) => (
                   <button
                     key={d}
                     type="button"
@@ -245,24 +281,26 @@ export function LiquidosMovimientoPage() {
                     className={direccion === d ? `${styles.segment} ${styles.segmentActive}` : styles.segment}
                     onClick={() => cambiarDireccion(d)}
                   >
-                    {d === "egreso" ? "Salida" : "Ingreso"}
+                    {d === "egreso" ? "Salida" : d === "ingreso" ? "Ingreso" : "Ajuste"}
                   </button>
                 ))}
               </div>
             </div>
 
+            {!esAjuste && (
             <div className={styles.field}>
               <label htmlFor="motivo" className={styles.label}>
                 Motivo
               </label>
               <select id="motivo" className={styles.input} value={motivo} onChange={(e) => cambiarMotivo(e.target.value as Motivo)}>
-                {MOTIVOS[direccion].map((m) => (
+                {MOTIVOS[direccion as "egreso" | "ingreso"].map((m) => (
                   <option key={m.id} value={m.id}>
                     {m.etiqueta}
                   </option>
                 ))}
               </select>
             </div>
+            )}
 
             {esLoteNuevo ? (
               <>
@@ -416,7 +454,7 @@ export function LiquidosMovimientoPage() {
                 ) : (
                   <div className={styles.field}>
                     <label htmlFor="litros" className={styles.label}>
-                      Litros
+                      {esAjuste ? "Litros medidos realmente en el tanque" : "Litros"}
                     </label>
                     <input
                       id="litros"
@@ -424,9 +462,9 @@ export function LiquidosMovimientoPage() {
                       type="text"
                       inputMode="decimal"
                       autoComplete="off"
-                      placeholder="Ej. 150"
-                      value={litros}
-                      onChange={(e) => setLitros(e.target.value.replace(/[^\d.,]/g, ""))}
+                      placeholder={esAjuste ? "Ej. 55" : "Ej. 150"}
+                      value={esAjuste ? medido : litros}
+                      onChange={(e) => (esAjuste ? setMedido : setLitros)(e.target.value.replace(/[^\d.,]/g, ""))}
                       required
                     />
                   </div>
@@ -435,25 +473,44 @@ export function LiquidosMovimientoPage() {
                 {tanqueSel && (
                   <div className={styles.resumen} aria-live="polite">
                     <div>
-                      <span>Saldo esperado hoy</span>
+                      <span>{esAjuste ? "Nivel en el sistema" : "Saldo esperado hoy"}</span>
                       <strong>{formatoLitros(saldo ?? 0)} L</strong>
                     </div>
-                    <div>
-                      <span>Quedaría en</span>
-                      <strong className={quedaria !== null && quedaria < 0 ? styles.difNegativa : undefined}>
-                        {quedaria === null ? "—" : `${formatoLitros(quedaria)} L`}
-                      </strong>
-                      {quedaria !== null && quedaria < 0 && (
-                        <span style={{ marginTop: 4, color: "var(--pachar-danger)" }}>
-                          Supera el saldo esperado ({conSignoLitros(quedaria)}). Revisa si falta cargar un ingreso.
-                        </span>
-                      )}
-                    </div>
+                    {esAjuste ? (
+                      <div>
+                        <span>Diferencia</span>
+                        <strong
+                          className={diferencia === null || diferencia === 0 ? undefined : diferencia > 0 ? styles.difPositiva : styles.difNegativa}
+                        >
+                          {diferencia === null ? "—" : diferencia === 0 ? "Sin diferencia" : conSignoLitros(diferencia)}
+                        </strong>
+                      </div>
+                    ) : (
+                      <div>
+                        <span>Quedaría en</span>
+                        <strong className={quedaria !== null && quedaria < 0 ? styles.difNegativa : undefined}>
+                          {quedaria === null ? "—" : `${formatoLitros(quedaria)} L`}
+                        </strong>
+                        {quedaria !== null && quedaria < 0 && (
+                          <span style={{ marginTop: 4, color: "var(--pachar-danger)" }}>
+                            Supera el saldo esperado ({conSignoLitros(quedaria)}). Revisa si falta cargar un ingreso.
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )}
               </>
             )}
 
+            {tanqueSel && fechaIncluida && !esLoteNuevo && (
+              <p className={styles.error} role="alert">
+                {esAjuste ? "No se puede ajustar con esta fecha: " : "Atención: "}la última medición de este tanque es del{" "}
+                {formatoFecha(baseFecha!)} y el sistema da por incluido en ella todo movimiento con fecha igual o anterior. Con la
+                fecha {formatoFecha(fecha)} <strong>no cambiará el nivel del tanque</strong>. Si ocurrió después de medir, usa la
+                fecha de hoy ({formatoFecha(hoyLocal())}).
+              </p>
+            )}
             <div className={styles.row}>
               <div className={styles.field}>
                 <label htmlFor="fecha" className={styles.label}>
@@ -469,21 +526,23 @@ export function LiquidosMovimientoPage() {
                   required
                 />
               </div>
-              <div className={styles.field}>
-                <label htmlFor="numero" className={styles.label}>
-                  N° de registro
-                </label>
-                <input
-                  id="numero"
-                  className={styles.input}
-                  type="text"
-                  autoComplete="off"
-                  maxLength={50}
-                  placeholder="Ej. 200"
-                  value={numero}
-                  onChange={(e) => setNumero(e.target.value)}
-                />
-              </div>
+              {!esAjuste && (
+                <div className={styles.field}>
+                  <label htmlFor="numero" className={styles.label}>
+                    N° de registro
+                  </label>
+                  <input
+                    id="numero"
+                    className={styles.input}
+                    type="text"
+                    autoComplete="off"
+                    maxLength={50}
+                    placeholder="Ej. 200"
+                    value={numero}
+                    onChange={(e) => setNumero(e.target.value)}
+                  />
+                </div>
+              )}
             </div>
 
             <div className={styles.field}>
@@ -495,18 +554,26 @@ export function LiquidosMovimientoPage() {
                 className={styles.input}
                 type="text"
                 maxLength={200}
-                placeholder={motivo === "otro" ? "Ej. muestra para laboratorio, merma por evaporación" : "Ej. Lote 29 de Matacuy"}
+                placeholder={
+                  esAjuste
+                    ? "Ej. medición con varilla, merma por evaporación"
+                    : motivo === "otro"
+                      ? "Ej. muestra para laboratorio, merma por evaporación"
+                      : "Ej. Lote 29 de Matacuy"
+                }
                 value={nota}
                 onChange={(e) => setNota(e.target.value)}
               />
-              <p className={styles.hint}>El N° de registro se mantiene al guardar para que cargues las demás líneas de la misma operación.</p>
+              {!esAjuste && (
+                <p className={styles.hint}>El N° de registro se mantiene al guardar para que cargues las demás líneas de la misma operación.</p>
+              )}
             </div>
 
             {mensaje && <p className={styles.success}>{mensaje}</p>}
             {error && <p className={styles.error}>{error}</p>}
 
             <button type="submit" className={styles.button} disabled={guardando}>
-              {guardando ? "Guardando..." : "Guardar movimiento"}
+              {guardando ? "Guardando..." : esAjuste ? "Guardar ajuste" : "Guardar movimiento"}
             </button>
           </form>
         </main>

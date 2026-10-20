@@ -56,7 +56,7 @@ export interface TanqueLiquido {
   created_at: string;
 }
 
-export type MotivoLiquido = "lote" | "destilacion" | "embotellado" | "otro";
+export type MotivoLiquido = "lote" | "destilacion" | "embotellado" | "otro" | "ajuste";
 
 export interface MovimientoLiquido {
   id: string;

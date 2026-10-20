@@ -19,6 +19,7 @@ const ETIQUETA_MOTIVO: Record<MotivoLiquido, string> = {
   lote: "Lote",
   destilacion: "Destilación",
   otro: "Otro",
+  ajuste: "Ajuste",
 };
 
 interface Fila {
@@ -28,10 +29,10 @@ interface Fila {
   producto?: ProductoTerminado;
 }
 
-const claseTipo = (tipo: MovimientoLiquido["tipo"]) =>
-  `${styles.badge} ${tipo === "ingreso" ? styles.badgeEntrada : styles.badgeSalida}`;
+const claseTipo = (m: MovimientoLiquido) =>
+  `${styles.badge} ${m.motivo === "ajuste" ? styles.badgeAjuste : m.tipo === "ingreso" ? styles.badgeEntrada : styles.badgeSalida}`;
 
-const etiquetaTipo = (tipo: MovimientoLiquido["tipo"]) => (tipo === "ingreso" ? "Ingreso" : "Salida");
+const etiquetaTipo = (m: MovimientoLiquido) => (m.motivo === "ajuste" ? "Ajuste" : m.tipo === "ingreso" ? "Ingreso" : "Salida");
 
 const litrosConSigno = (m: MovimientoLiquido) => `${m.tipo === "ingreso" ? "+" : "−"}${formatoLitros(Number(m.litros))} L`;
 
@@ -133,7 +134,7 @@ export function MovimientosLiquidosListPage() {
   function resumenAnulacion(f: Fila): string[] {
     const m = f.mov;
     return [
-      `${etiquetaTipo(m.tipo)} · ${litrosConSigno(m)} · ${ETIQUETA_MOTIVO[m.motivo]}`,
+      `${etiquetaTipo(m)} · ${litrosConSigno(m)} · ${ETIQUETA_MOTIVO[m.motivo]}`,
       `${f.tanque?.nombre ?? "Tanque"} · ${formatoFecha(m.fecha)}`,
       m.numero_documento ? `N° ${m.numero_documento}` : "Sin N° de registro",
     ];
@@ -273,7 +274,7 @@ export function MovimientosLiquidosListPage() {
                 <tr key={f.mov.id} className={f.mov.anulado ? styles.filaAnulada : undefined}>
                   <td>{formatoFecha(f.mov.fecha)}</td>
                   <td>
-                    <span className={claseTipo(f.mov.tipo)}>{etiquetaTipo(f.mov.tipo)}</span>
+                    <span className={claseTipo(f.mov)}>{etiquetaTipo(f.mov)}</span>
                   </td>
                   <td>{ETIQUETA_MOTIVO[f.mov.motivo]}</td>
                   <td>{f.tanque?.nombre ?? "—"}</td>
@@ -335,7 +336,9 @@ function Comprobante({ numero, filas, anuladas, generadoPor }: { numero: string;
         ? "Registro de preparación de lote"
         : motivos.has("destilacion")
           ? "Registro de destilación"
-          : "Registro de movimientos de líquidos";
+          : motivos.size === 1 && motivos.has("ajuste")
+            ? "Registro de ajuste de líquidos"
+            : "Registro de movimientos de líquidos";
 
   const salidas = filas.filter((f) => f.mov.tipo === "egreso");
   const ingresos = filas.filter((f) => f.mov.tipo === "ingreso");
@@ -386,7 +389,7 @@ function Comprobante({ numero, filas, anuladas, generadoPor }: { numero: string;
         <tbody>
           {ordenadas.map((f) => (
             <tr key={f.mov.id}>
-              <td>{etiquetaTipo(f.mov.tipo)}</td>
+              <td>{etiquetaTipo(f.mov)}</td>
               <td>{f.tanque?.nombre ?? "—"}</td>
               <td>{f.linea?.nombre ?? "—"}</td>
               <td>

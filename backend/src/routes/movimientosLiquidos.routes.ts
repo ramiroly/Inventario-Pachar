@@ -19,7 +19,7 @@ const movimientoSchema = z
     tanque_id: z.string().uuid(),
     fecha: z.string().date(),
     tipo: z.enum(["ingreso", "egreso"]),
-    motivo: z.enum(["lote", "destilacion", "embotellado", "otro"]),
+    motivo: z.enum(["lote", "destilacion", "embotellado", "otro", "ajuste"]),
     litros: z.number().positive().max(1_000_000).optional(),
     numero_documento: z.string().trim().min(1).max(50).nullish(),
     nota: textoOpcional(200),
@@ -80,6 +80,23 @@ movimientosLiquidosRouter.post("/", requireRole("admin"), async (req, res) => {
     .single();
   if (!tanque || tanque.activo === false) {
     return res.status(400).json({ error: "El tanque no existe o ya está marcado como terminado." });
+  }
+
+  // Un movimiento con fecha igual o anterior a la ultima medicion del tanque se da por incluido
+  // en ella y no cambiaria el nivel: para un ajuste eso no tiene sentido, se rechaza.
+  if (m.motivo === "ajuste") {
+    const { data: ultimo } = await supabase
+      .from("stock_liquidos_snapshot")
+      .select("fecha_corte")
+      .eq("tanque_id", m.tanque_id)
+      .order("fecha_corte", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (ultimo && m.fecha <= ultimo.fecha_corte) {
+      return res.status(400).json({
+        error: `El ajuste debe tener una fecha posterior a la última medición del tanque (${ultimo.fecha_corte}).`,
+      });
+    }
   }
 
   let litros = m.litros;
