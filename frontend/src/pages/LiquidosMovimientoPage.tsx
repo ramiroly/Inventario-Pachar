@@ -6,10 +6,10 @@ import { mensajeError } from "../lib/errores";
 import { formatoFecha, hoyLocal } from "../lib/fechas";
 import { ordenLinea } from "../lib/lineas";
 import { conSignoLitros, formatoLitros, parseLitros } from "../lib/numeros";
-import type { EsperadoTanque, Linea, ProductoTerminado, TanqueLiquido } from "../types/models";
+import { ETIQUETA_ESTADO, type EsperadoTanque, type EstadoLote, type Linea, type ProductoTerminado, type TanqueLiquido } from "../types/models";
 import styles from "./movimientos.module.css";
 
-type Direccion = "egreso" | "ingreso" | "ajuste";
+type Direccion = "egreso" | "ingreso" | "ajuste" | "estado";
 type Motivo = "embotellado" | "lote" | "destilacion" | "otro" | "lote-nuevo";
 
 const MOTIVOS: Record<"egreso" | "ingreso", { id: Motivo; etiqueta: string }[]> = {
@@ -42,6 +42,8 @@ export function LiquidosMovimientoPage() {
   const [unidades, setUnidades] = useState("");
   const [litros, setLitros] = useState("");
   const [medido, setMedido] = useState("");
+  const [estadoNuevo, setEstadoNuevo] = useState<EstadoLote | "">("");
+  const [estadoInicial, setEstadoInicial] = useState<EstadoLote>("proceso");
   const [lineaId, setLineaId] = useState("");
   const [loteTexto, setLoteTexto] = useState("");
   const [capacidad, setCapacidad] = useState("");
@@ -75,12 +77,18 @@ export function LiquidosMovimientoPage() {
   const lineaPorId = useMemo(() => new Map(lineas.map((l) => [l.id, l])), [lineas]);
 
   const esAjuste = direccion === "ajuste";
+  const esEstado = direccion === "estado";
   const esEmbotellado = direccion === "egreso" && motivo === "embotellado";
   const esLoteNuevo = direccion === "ingreso" && motivo === "lote-nuevo";
 
   // Tanques elegibles: el embotellado solo sale de tanques terminados.
   const gruposTanques = useMemo(() => {
-    const elegibles = esEmbotellado ? tanques.filter((t) => t.tipo === "terminado") : tanques;
+    // El embotellado solo sale de lotes aprobados (estado terminado); el cambio de estado, de cualquier lote.
+    const elegibles = esEmbotellado
+      ? tanques.filter((t) => t.tipo === "terminado" && (t.estado ?? "terminado") === "terminado")
+      : esEstado
+        ? tanques.filter((t) => t.tipo === "terminado")
+        : tanques;
     return lineasOrdenadas
       .map((linea) => ({
         linea,
@@ -94,7 +102,7 @@ export function LiquidosMovimientoPage() {
           ),
       }))
       .filter((g) => g.tanques.length > 0);
-  }, [tanques, lineasOrdenadas, esEmbotellado]);
+  }, [tanques, lineasOrdenadas, esEmbotellado, esEstado]);
 
   const tanqueSel = tanques.find((t) => t.id === tanqueId);
   const productosDelTanque = useMemo(
@@ -120,14 +128,18 @@ export function LiquidosMovimientoPage() {
   const baseFecha = tanqueSel ? (saldos[tanqueSel.id]?.base_fecha ?? null) : null;
   const fechaIncluida = !!baseFecha && fecha <= baseFecha;
 
+  const estadoActual = tanqueSel?.estado ?? "terminado";
+  const estadosPosibles = (Object.keys(ETIQUETA_ESTADO) as EstadoLote[]).filter((e) => e !== estadoActual);
+
   const loteNormalizado = /^\d+$/.test(loteTexto.trim()) ? `Lote ${loteTexto.trim()}` : loteTexto.trim();
   const lineaLote = lineaPorId.get(lineaId);
   const nombreNuevoTanque =
-    lineaLote && loteNormalizado ? `${lineaLote.nombre.toLocaleUpperCase("es")} ${loteNormalizado.toLocaleUpperCase("es")} TERMINADO` : null;
+    lineaLote && loteNormalizado ? `${lineaLote.nombre.toLocaleUpperCase("es")} ${loteNormalizado.toLocaleUpperCase("es")}` : null;
 
   function cambiarDireccion(d: Direccion) {
     setDireccion(d);
-    setMotivo(d === "ajuste" ? "otro" : MOTIVOS[d][0].id);
+    setMotivo(d === "ajuste" || d === "estado" ? "otro" : MOTIVOS[d][0].id);
+    setEstadoNuevo("");
     setTanqueId("");
     setProductoId("");
     setError(null);
@@ -158,15 +170,31 @@ export function LiquidosMovimientoPage() {
         lote: loteTexto.trim(),
         capacidad_litros: cap,
         litros: l,
+        estado: estadoInicial,
         ...comunes,
       });
-      setMensaje(`Lote nuevo registrado: ${r.tanque.nombre} con ${formatoLitros(l)} L.`);
+      setMensaje(`Lote nuevo registrado: ${r.tanque.nombre} (${ETIQUETA_ESTADO[estadoInicial].toLowerCase()}) con ${formatoLitros(l)} L.`);
       setLoteTexto("");
       setLitros("");
       return;
     }
 
     if (!tanqueSel) throw new Error("Selecciona el tanque.");
+
+    if (esEstado) {
+      if (!estadoNuevo) throw new Error("Elige el nuevo estado del lote.");
+      await api.post("/cambios-estado-lote", {
+        tanque_id: tanqueSel.id,
+        estado: estadoNuevo,
+        fecha,
+        nota: nota.trim() || null,
+      });
+      setMensaje(`Estado actualizado: ${tanqueSel.nombre} pasó de ${ETIQUETA_ESTADO[estadoActual].toLowerCase()} a ${ETIQUETA_ESTADO[estadoNuevo].toLowerCase()}.`);
+      setEstadoNuevo("");
+      setNota("");
+      setTanqueId("");
+      return;
+    }
 
     if (esAjuste) {
       if (medidoNum === null) throw new Error("Escribe los litros medidos realmente en el tanque (0 o más).");
@@ -259,6 +287,9 @@ export function LiquidosMovimientoPage() {
             <li>
               <strong>Ajuste:</strong> corrige el nivel de un tanque según lo que mediste realmente.
             </li>
+            <li>
+              <strong>Estado:</strong> pasa un lote de en proceso a en reposo y a terminado (aprobado). Solo los lotes terminados se embotellan.
+            </li>
             <li>Usa el mismo N° de registro en todas las líneas de una operación.</li>
             <li>El corte semanal sigue siendo la medida oficial: aquí solo se calcula lo que debería haber.</li>
           </ul>
@@ -266,13 +297,13 @@ export function LiquidosMovimientoPage() {
 
         <main className={styles.main}>
           <h1 className={styles.titulo}>Movimiento de líquidos</h1>
-          <p className={styles.subtitulo}>Registra una salida, un ingreso o un ajuste de litros en tus tanques.</p>
+          <p className={styles.subtitulo}>Registra una salida, un ingreso, un ajuste de litros o un cambio de estado de lote.</p>
 
           <form onSubmit={handleSubmit} className={styles.form}>
             <div className={styles.field}>
               <span className={styles.label}>Tipo de movimiento</span>
-              <div className={styles.segmented} role="radiogroup" aria-label="Tipo de movimiento" style={{ gridTemplateColumns: "1fr 1fr 1fr" }}>
-                {(["egreso", "ingreso", "ajuste"] as const).map((d) => (
+              <div className={styles.segmented} role="radiogroup" aria-label="Tipo de movimiento" style={{ gridTemplateColumns: "repeat(4, 1fr)" }}>
+                {(["egreso", "ingreso", "ajuste", "estado"] as const).map((d) => (
                   <button
                     key={d}
                     type="button"
@@ -281,13 +312,13 @@ export function LiquidosMovimientoPage() {
                     className={direccion === d ? `${styles.segment} ${styles.segmentActive}` : styles.segment}
                     onClick={() => cambiarDireccion(d)}
                   >
-                    {d === "egreso" ? "Salida" : d === "ingreso" ? "Ingreso" : "Ajuste"}
+                    {d === "egreso" ? "Salida" : d === "ingreso" ? "Ingreso" : d === "ajuste" ? "Ajuste" : "Estado"}
                   </button>
                 ))}
               </div>
             </div>
 
-            {!esAjuste && (
+            {!esAjuste && !esEstado && (
             <div className={styles.field}>
               <label htmlFor="motivo" className={styles.label}>
                 Motivo
@@ -370,13 +401,25 @@ export function LiquidosMovimientoPage() {
                     />
                   </div>
                 </div>
+                <div className={styles.field}>
+                  <label htmlFor="estadoInicial" className={styles.label}>
+                    Estado del lote
+                  </label>
+                  <select id="estadoInicial" className={styles.input} value={estadoInicial} onChange={(e) => setEstadoInicial(e.target.value as EstadoLote)}>
+                    {(Object.keys(ETIQUETA_ESTADO) as EstadoLote[]).map((e) => (
+                      <option key={e} value={e}>
+                        {ETIQUETA_ESTADO[e]}
+                      </option>
+                    ))}
+                  </select>
+                </div>
                 {nombreNuevoTanque && <p className={styles.hint}>Se creará el tanque “{nombreNuevoTanque}”.</p>}
               </>
             ) : (
               <>
                 <div className={styles.field}>
                   <label htmlFor="tanque" className={styles.label}>
-                    {esEmbotellado ? "Tanque de origen (lote)" : "Tanque"}
+                    {esEmbotellado ? "Tanque de origen (lote)" : esEstado ? "Lote" : "Tanque"}
                   </label>
                   <select
                     id="tanque"
@@ -395,7 +438,7 @@ export function LiquidosMovimientoPage() {
                       <optgroup key={linea.id} label={linea.nombre}>
                         {lista.map((t) => (
                           <option key={t.id} value={t.id}>
-                            {t.nombre} · {formatoLitros(saldos[t.id]?.esperado ?? 0)} L
+                            {t.nombre} · {esEstado ? ETIQUETA_ESTADO[t.estado ?? "terminado"] : `${formatoLitros(saldos[t.id]?.esperado ?? 0)} L`}
                           </option>
                         ))}
                       </optgroup>
@@ -403,7 +446,34 @@ export function LiquidosMovimientoPage() {
                   </select>
                 </div>
 
-                {esEmbotellado ? (
+                {esEmbotellado && gruposTanques.length === 0 && (
+                  <p className={styles.hint}>No hay lotes terminados para embotellar. Aprueba un lote en la opción Estado.</p>
+                )}
+
+                {esEstado ? (
+                  <div className={styles.field}>
+                    <label htmlFor="estadoNuevo" className={styles.label}>
+                      Nuevo estado{tanqueSel ? ` (hoy: ${ETIQUETA_ESTADO[estadoActual].toLowerCase()})` : ""}
+                    </label>
+                    <select
+                      id="estadoNuevo"
+                      className={styles.input}
+                      value={estadoNuevo}
+                      onChange={(e) => setEstadoNuevo(e.target.value as EstadoLote)}
+                      disabled={!tanqueSel}
+                      required
+                    >
+                      <option value="" disabled>
+                        {tanqueSel ? "Selecciona el nuevo estado..." : "Primero elige el lote"}
+                      </option>
+                      {estadosPosibles.map((e) => (
+                        <option key={e} value={e}>
+                          {ETIQUETA_ESTADO[e]}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                ) : esEmbotellado ? (
                   <>
                     <div className={styles.row}>
                       <div className={styles.field}>
@@ -470,7 +540,7 @@ export function LiquidosMovimientoPage() {
                   </div>
                 )}
 
-                {tanqueSel && (
+                {tanqueSel && !esEstado && (
                   <div className={styles.resumen} aria-live="polite">
                     <div>
                       <span>{esAjuste ? "Nivel en el sistema" : "Saldo esperado hoy"}</span>
@@ -503,7 +573,7 @@ export function LiquidosMovimientoPage() {
               </>
             )}
 
-            {tanqueSel && fechaIncluida && !esLoteNuevo && (
+            {tanqueSel && fechaIncluida && !esLoteNuevo && !esEstado && (
               <p className={styles.error} role="alert">
                 {esAjuste ? "No se puede ajustar con esta fecha: " : "Atención: "}la última medición de este tanque es del{" "}
                 {formatoFecha(baseFecha!)} y el sistema da por incluido en ella todo movimiento con fecha igual o anterior. Con la
@@ -526,7 +596,7 @@ export function LiquidosMovimientoPage() {
                   required
                 />
               </div>
-              {!esAjuste && (
+              {!esAjuste && !esEstado && (
                 <div className={styles.field}>
                   <label htmlFor="numero" className={styles.label}>
                     N° de registro
@@ -555,7 +625,9 @@ export function LiquidosMovimientoPage() {
                 type="text"
                 maxLength={200}
                 placeholder={
-                  esAjuste
+                  esEstado
+                    ? "Ej. aprobado por control de calidad"
+                    : esAjuste
                     ? "Ej. medición con varilla, merma por evaporación"
                     : motivo === "otro"
                       ? "Ej. muestra para laboratorio, merma por evaporación"
@@ -564,7 +636,7 @@ export function LiquidosMovimientoPage() {
                 value={nota}
                 onChange={(e) => setNota(e.target.value)}
               />
-              {!esAjuste && (
+              {!esAjuste && !esEstado && (
                 <p className={styles.hint}>El N° de registro se mantiene al guardar para que cargues las demás líneas de la misma operación.</p>
               )}
             </div>
@@ -573,7 +645,7 @@ export function LiquidosMovimientoPage() {
             {error && <p className={styles.error}>{error}</p>}
 
             <button type="submit" className={styles.button} disabled={guardando}>
-              {guardando ? "Guardando..." : esAjuste ? "Guardar ajuste" : "Guardar movimiento"}
+              {guardando ? "Guardando..." : esAjuste ? "Guardar ajuste" : esEstado ? "Guardar cambio de estado" : "Guardar movimiento"}
             </button>
           </form>
         </main>

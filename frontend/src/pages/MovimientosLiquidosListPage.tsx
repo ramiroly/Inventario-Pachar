@@ -8,7 +8,7 @@ import { mensajeError } from "../lib/errores";
 import { formatoFecha } from "../lib/fechas";
 import { formatoLitros } from "../lib/numeros";
 import { useAuth } from "../lib/useAuth";
-import type { Linea, MotivoLiquido, MovimientoLiquido, ProductoTerminado, TanqueLiquido } from "../types/models";
+import { ETIQUETA_ESTADO, type CambioEstadoLote, type Linea, type MotivoLiquido, type MovimientoLiquido, type ProductoTerminado, type TanqueLiquido } from "../types/models";
 import styles from "./movimientosList.module.css";
 
 type FiltroTipo = "todos" | "ingreso" | "egreso";
@@ -20,7 +20,28 @@ const ETIQUETA_MOTIVO: Record<MotivoLiquido, string> = {
   destilacion: "Destilación",
   otro: "Otro",
   ajuste: "Ajuste",
+  estado: "Cambio de estado",
 };
+
+// Un cambio de estado de lote se muestra en el Registro como una fila mas (sin litros).
+function comoFila(c: CambioEstadoLote): MovimientoLiquido {
+  const texto = `${ETIQUETA_ESTADO[c.estado_anterior]} → ${ETIQUETA_ESTADO[c.estado_nuevo]}`;
+  return {
+    id: `estado-${c.id}`,
+    tanque_id: c.tanque_id,
+    fecha: c.fecha,
+    tipo: "ingreso",
+    litros: 0,
+    motivo: "estado",
+    numero_documento: null,
+    nota: c.nota ? `${texto} · ${c.nota}` : texto,
+    producto_id: null,
+    unidades: null,
+    created_at: c.created_at,
+    anulado: false,
+    anulado_motivo: null,
+  };
+}
 
 interface Fila {
   mov: MovimientoLiquido;
@@ -30,11 +51,11 @@ interface Fila {
 }
 
 const claseTipo = (m: MovimientoLiquido) =>
-  `${styles.badge} ${m.motivo === "ajuste" ? styles.badgeAjuste : m.tipo === "ingreso" ? styles.badgeEntrada : styles.badgeSalida}`;
+  `${styles.badge} ${m.motivo === "ajuste" || m.motivo === "estado" ? styles.badgeAjuste : m.tipo === "ingreso" ? styles.badgeEntrada : styles.badgeSalida}`;
 
-const etiquetaTipo = (m: MovimientoLiquido) => (m.motivo === "ajuste" ? "Ajuste" : m.tipo === "ingreso" ? "Ingreso" : "Salida");
+const etiquetaTipo = (m: MovimientoLiquido) => (m.motivo === "estado" ? "Estado" : m.motivo === "ajuste" ? "Ajuste" : m.tipo === "ingreso" ? "Ingreso" : "Salida");
 
-const litrosConSigno = (m: MovimientoLiquido) => `${m.tipo === "ingreso" ? "+" : "−"}${formatoLitros(Number(m.litros))} L`;
+const litrosConSigno = (m: MovimientoLiquido) => m.motivo === "estado" ? "—" : `${m.tipo === "ingreso" ? "+" : "−"}${formatoLitros(Number(m.litros))} L`;
 
 function detalle(f: Fila): string {
   if (f.mov.motivo === "embotellado" && f.producto && f.mov.unidades) {
@@ -46,6 +67,7 @@ function detalle(f: Fila): string {
 export function MovimientosLiquidosListPage() {
   const { session } = useAuth();
   const [movimientos, setMovimientos] = useState<MovimientoLiquido[]>([]);
+  const [cambios, setCambios] = useState<CambioEstadoLote[]>([]);
   const [tanques, setTanques] = useState<TanqueLiquido[]>([]);
   const [lineas, setLineas] = useState<Linea[]>([]);
   const [productos, setProductos] = useState<ProductoTerminado[]>([]);
@@ -67,9 +89,11 @@ export function MovimientosLiquidosListPage() {
       api.get<TanqueLiquido[]>("/tanques"),
       api.get<Linea[]>("/lineas"),
       api.get<ProductoTerminado[]>("/productos"),
+      api.get<CambioEstadoLote[]>("/cambios-estado-lote"),
     ])
-      .then(([m, t, l, p]) => {
+      .then(([m, t, l, p, c]) => {
         setMovimientos(m);
+        setCambios(c);
         setTanques(t);
         setLineas(l);
         setProductos(p);
@@ -84,7 +108,9 @@ export function MovimientosLiquidosListPage() {
 
   const filas: Fila[] = useMemo(
     () =>
-      movimientos.map((mov) => {
+      [...movimientos, ...cambios.map(comoFila)]
+        .sort((a, b) => b.fecha.localeCompare(a.fecha) || String(b.created_at).localeCompare(String(a.created_at)))
+        .map((mov) => {
         const tanque = tanquePorId.get(mov.tanque_id);
         return {
           mov,
@@ -93,14 +119,14 @@ export function MovimientosLiquidosListPage() {
           producto: mov.producto_id ? productoPorId.get(mov.producto_id) : undefined,
         };
       }),
-    [movimientos, tanquePorId, lineaPorId, productoPorId]
+    [movimientos, cambios, tanquePorId, lineaPorId, productoPorId]
   );
 
   const filasFiltradas = useMemo(() => {
     const q = texto.trim().toLowerCase();
     return filas.filter((f) => {
       if (ocultarAnulados && f.mov.anulado) return false;
-      if (tipo !== "todos" && f.mov.tipo !== tipo) return false;
+      if (tipo !== "todos" && (f.mov.motivo === "estado" || f.mov.tipo !== tipo)) return false;
       if (motivo !== "todos" && f.mov.motivo !== motivo) return false;
       if (!q) return true;
       return [f.mov.numero_documento, f.tanque?.nombre, f.linea?.nombre, f.producto?.descripcion, f.mov.nota, f.mov.anulado_motivo]
@@ -299,7 +325,7 @@ export function MovimientosLiquidosListPage() {
                   <td>
                     {f.mov.anulado ? (
                       <span className={styles.badgeAnulado}>Anulado</span>
-                    ) : (
+                    ) : f.mov.motivo === "estado" ? null : (
                       <button type="button" className={styles.anularBtn} onClick={() => setAnulando(f)}>
                         Anular
                       </button>

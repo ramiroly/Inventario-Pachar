@@ -56,6 +56,8 @@ export interface MovimientoTerminado {
   anulado_motivo: string | null;
 }
 
+export type EstadoLote = "proceso" | "reposo" | "terminado";
+
 export type TipoTanque = "terminado" | "subproducto";
 
 export interface TanqueLiquido {
@@ -65,6 +67,8 @@ export interface TanqueLiquido {
   tipo: TipoTanque;
   capacidad_litros: number | null; // null = capacidad sin confirmar, ver TODO en migración
   lote: string | null;
+  // Estado del lote (solo tanques terminados): el cambio se registra en cambios_estado_lote.
+  estado: EstadoLote;
   activo: boolean;
   created_at: string;
 }

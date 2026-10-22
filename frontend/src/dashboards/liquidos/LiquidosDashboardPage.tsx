@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Bar, Doughnut } from "react-chartjs-2";
 import { api } from "../../lib/api";
-import type { DashboardLiquidosResponse, LineaLiquidos, TanqueDashboard, TanqueTerminadoDashboard } from "../../types/models";
+import { ETIQUETA_ESTADO, type DashboardLiquidosResponse, type LineaLiquidos, type TanqueDashboard, type TanqueTerminadoDashboard } from "../../types/models";
 import { createDonutPercentPlugin } from "../shared/chartPlugins";
 import { useFloatingTooltip } from "../shared/useFloatingTooltip";
 import { formatNum } from "../shared/format";
@@ -66,6 +66,7 @@ export function LiquidosDashboardPage() {
   if (error) return <p style={{ color: "crimson" }}>Error cargando dashboard: {error}</p>;
   if (!data || !computed) return <p>Cargando...</p>;
 
+  const totalPrep = data.lineas.reduce((a, l) => a + (l.en_preparacion_litros ?? 0), 0);
   const { ordenadas, conTerminado, totalTerm, totalPrev, netDelta, topLinea, ocupProm, maxUp, maxDown, lineasActivas } = computed;
 
   const hayMovimientos = data.lineas.some(
@@ -247,7 +248,10 @@ export function LiquidosDashboardPage() {
           <div className={`${styles.kpi} ${styles.kpiGrn}`}>
             <div className={styles.kl}>Total terminados</div>
             <div className={`${styles.kv} ${styles.kvGrn}`}>{formatNum(totalTerm)}</div>
-            <div className={styles.kd}>litros en planta &mdash; {data.fecha_corte}</div>
+            <div className={styles.kd}>
+              litros terminados &mdash; {data.fecha_corte}
+              {totalPrep > 0 ? ` · ${formatNum(totalPrep)} L más en preparación` : ""}
+            </div>
           </div>
           <div className={`${styles.kpi} ${styles.kpiBlu}`}>
             <div className={styles.kl}>Línea dominante</div>
@@ -456,6 +460,7 @@ function LineaSection({
         <span style={{ fontSize: 10, color: "rgba(255,255,255,.75)", marginLeft: "auto" }}>
           Terminado: {formatNum(t?.litros_actual ?? 0)} L
           {t && t.litros_anterior === 0 && t.litros_actual > 0 ? " · Lote nuevo" : ""}
+          {linea.en_preparacion_litros > 0 ? ` · En preparación: ${formatNum(linea.en_preparacion_litros)} L` : ""}
           {terminados.length > 1 ? ` · ${terminados.length} lotes` : ""}
           {subs.length ? ` · ${subs.length} subproducto${subs.length > 1 ? "s" : ""}` : ""}
         </span>
@@ -477,6 +482,11 @@ function LineaSection({
                       {tk.lote}
                       {tk.litros_anterior === 0 && tk.litros_actual > 0 ? " *" : ""}
                     </div>
+                    {tk.estado && tk.estado !== "terminado" && (
+                      <div style={{ fontSize: 8, fontWeight: 700, color: "#B45309", textTransform: "uppercase", letterSpacing: ".03em" }}>
+                        {ETIQUETA_ESTADO[tk.estado]}
+                      </div>
+                    )}
                     <TankSvg litros={tk.litros_actual} prev={tk.litros_anterior > 0 ? tk.litros_anterior : null} cap={tk.capacidad_litros} colorDark={col} colorLight={colLt} width={64} height={130} />
                     <div className={styles.tankLitros}>{formatNum(tk.litros_actual)} L</div>
                     <div className={styles.tankCap}>/ {formatNum(tk.capacidad_litros ?? 0)} L</div>

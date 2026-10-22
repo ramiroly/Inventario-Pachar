@@ -5,7 +5,7 @@ import { mensajeError } from "../lib/errores";
 import { formatoFecha, hoyLocal } from "../lib/fechas";
 import { ordenLinea } from "../lib/lineas";
 import { conSignoLitros, formatoLitros, parseLitros } from "../lib/numeros";
-import type { EsperadoTanque, Linea, StockLiquidoSnapshot, TanqueLiquido } from "../types/models";
+import { ETIQUETA_ESTADO, type EsperadoTanque, type Linea, type StockLiquidoSnapshot, type TanqueLiquido } from "../types/models";
 import styles from "./liquidosCorte.module.css";
 
 interface Lectura {
@@ -205,14 +205,14 @@ export function LiquidosCortePage() {
 
   async function terminarLote(t: TanqueLiquido) {
     const ok = window.confirm(
-      `¿Marcar "${t.lote ?? t.nombre}" como terminado?\n\nDejará de aparecer en este formulario y en el dashboard de Líquidos. Si quieres que quede registrado su 0 L en un corte, guarda el corte antes.`
+      `¿Archivar "${t.lote ?? t.nombre}" porque ya se embotelló todo?\n\nDejará de aparecer en este formulario y en el dashboard de Líquidos. Si quieres que quede registrado su 0 L en un corte, guarda el corte antes.`
     );
     if (!ok) return;
     setError(null);
     try {
       await api.patch(`/tanques/${t.id}`, { activo: false });
       await cargar();
-      setMensaje(`${t.lote ?? t.nombre} marcado como terminado.`);
+      setMensaje(`${t.lote ?? t.nombre} archivado.`);
     } catch (e) {
       setError(mensajeError(e));
     }
@@ -251,6 +251,7 @@ export function LiquidosCortePage() {
           <span className={styles.meta}>
             Cap. {t.capacidad_litros === null ? "sin definir" : `${formatoLitros(t.capacidad_litros)} L`} · Anterior{" "}
             {ant ? `${formatoLitros(ant.litros)} L` : "—"}
+            {t.tipo === "terminado" ? ` · ${ETIQUETA_ESTADO[t.estado ?? "terminado"]}` : ""}
           </span>
           {hayMovimientos && (
             <span className={styles.meta}>
@@ -281,7 +282,7 @@ export function LiquidosCortePage() {
           )}
           {puedeTerminar && valor === 0 && (
             <button type="button" className={styles.botonLink} onClick={() => terminarLote(t)}>
-              Marcar lote como terminado
+              Archivar lote (ya se embotelló todo)
             </button>
           )}
         </div>

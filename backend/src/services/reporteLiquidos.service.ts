@@ -6,6 +6,8 @@ export interface TanqueReporteLiquidos {
   tanque_id: string;
   nombre: string;
   lote: string | null;
+  // Solo los lotes (tanques terminados) tienen estado; los subproductos no.
+  estado: "proceso" | "reposo" | "terminado" | null;
   capacidad_litros: number | null;
   litros: number;
   // Litros que entraron (+) o salieron (-) por movimientos despues del ultimo corte.
@@ -24,7 +26,10 @@ export interface ReporteLiquidos {
   // Fecha de la ultima medicion (corte semanal) en la que se basa el reporte.
   fecha_ultimo_corte: string | null;
   lineas: LineaReporteLiquidos[];
+  // Solo lotes aprobados (estado terminado).
   total_terminados: number;
+  // Lotes en proceso o en reposo.
+  total_en_preparacion: number;
   total_subproductos: number;
   total_litros: number;
 }
@@ -61,13 +66,14 @@ export async function reporteLiquidosActual(): Promise<ReporteLiquidos> {
     movsPorTanque.set(m.tanque_id, lista);
   }
 
-  const aReporte = (t: { id: string; nombre: string; lote: string | null; capacidad_litros: number | null }): TanqueReporteLiquidos => {
+  const aReporte = (t: { id: string; nombre: string; lote: string | null; tipo: string; estado?: string | null; capacidad_litros: number | null }): TanqueReporteLiquidos => {
     const base = baseDe.get(t.id);
     const neto = (movsPorTanque.get(t.id) ?? []).filter((m) => !base || m.fecha > base.fecha_corte).reduce((a, m) => a + m.firmado, 0);
     return {
       tanque_id: t.id,
       nombre: t.nombre,
       lote: t.lote,
+      estado: t.tipo === "terminado" ? ((t.estado ?? "terminado") as TanqueReporteLiquidos["estado"]) : null,
       capacidad_litros: t.capacidad_litros === null ? null : Number(t.capacidad_litros),
       litros: Math.max(0, redondear(Number(base?.litros ?? 0) + neto)),
       neto_desde_corte: redondear(neto),
@@ -97,13 +103,16 @@ export async function reporteLiquidosActual(): Promise<ReporteLiquidos> {
     .filter((l) => l.terminados.length > 0 || l.subs.length > 0);
 
   const suma = (ts: TanqueReporteLiquidos[]) => ts.reduce((a, t) => a + t.litros, 0);
-  const total_terminados = redondear(lineas.reduce((a, l) => a + suma(l.terminados), 0));
+  const aprobado = (t: TanqueReporteLiquidos) => t.estado === "terminado";
+  const total_terminados = redondear(lineas.reduce((a, l) => a + suma(l.terminados.filter(aprobado)), 0));
+  const total_en_preparacion = redondear(lineas.reduce((a, l) => a + suma(l.terminados.filter((t) => !aprobado(t))), 0));
   const total_subproductos = redondear(lineas.reduce((a, l) => a + suma(l.subs), 0));
   return {
     fecha_ultimo_corte: ultimoCorte,
     lineas,
     total_terminados,
+    total_en_preparacion,
     total_subproductos,
-    total_litros: redondear(total_terminados + total_subproductos),
+    total_litros: redondear(total_terminados + total_en_preparacion + total_subproductos),
   };
 }

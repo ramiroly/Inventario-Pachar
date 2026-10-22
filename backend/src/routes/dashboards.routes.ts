@@ -359,6 +359,7 @@ dashboardsRouter.get("/liquidos", requireRole("socio"), async (_req, res) => {
         tanque_id: t.id,
         nombre: t.nombre,
         lote: t.lote,
+        estado: (t.estado ?? "terminado") as "proceso" | "reposo" | "terminado",
         litros_actual: actual,
         litros_anterior: anterior,
         capacidad_litros: t.capacidad_litros,
@@ -368,20 +369,25 @@ dashboardsRouter.get("/liquidos", requireRole("socio"), async (_req, res) => {
       };
     });
 
+    // Solo los lotes aprobados (estado terminado) cuentan en el total de la linea; los que estan
+    // en proceso o en reposo se muestran como tanques pero van aparte (en_preparacion_litros).
+    const aprobados = terminados.filter((t) => t.estado === "terminado");
+    const enPreparacionLitros = redondear(terminados.filter((t) => t.estado !== "terminado").reduce((acc, t) => acc + t.litros_actual, 0));
+
     const terminado = (() => {
-      if (terminados.length <= 1) return terminados[0] ?? null;
-      const actual = terminados.reduce((acc, t) => acc + t.litros_actual, 0);
-      const anterior = terminados.reduce((acc, t) => acc + t.litros_anterior, 0);
-      const capacidades = terminados.map((t) => t.capacidad_litros).filter((c): c is number => c !== null);
+      if (aprobados.length <= 1) return aprobados[0] ?? null;
+      const actual = aprobados.reduce((acc, t) => acc + t.litros_actual, 0);
+      const anterior = aprobados.reduce((acc, t) => acc + t.litros_anterior, 0);
+      const capacidades = aprobados.map((t) => t.capacidad_litros).filter((c): c is number => c !== null);
       const { delta, loteNuevo } = compararLiquido(actual, anterior);
       return {
-        ...terminados[0],
+        ...aprobados[0],
         litros_actual: actual,
         litros_anterior: anterior,
         capacidad_litros: capacidades.length > 0 ? capacidades.reduce((acc, c) => acc + c, 0) : null,
         delta,
         lote_nuevo: loteNuevo,
-        neto_desde_corte: redondear(terminados.reduce((acc, t) => acc + t.neto_desde_corte, 0)),
+        neto_desde_corte: redondear(aprobados.reduce((acc, t) => acc + t.neto_desde_corte, 0)),
       };
     })();
 
@@ -408,6 +414,7 @@ dashboardsRouter.get("/liquidos", requireRole("socio"), async (_req, res) => {
       color_sub: linea?.color_sub ?? null,
       terminado,
       terminados,
+      en_preparacion_litros: enPreparacionLitros,
       subs,
     };
   });

@@ -43,6 +43,24 @@ export interface MovimientoTerminado {
   anulado_motivo: string | null;
 }
 
+export type EstadoLote = "proceso" | "reposo" | "terminado";
+
+export const ETIQUETA_ESTADO: Record<EstadoLote, string> = {
+  proceso: "En proceso",
+  reposo: "En reposo",
+  terminado: "Terminado",
+};
+
+export interface CambioEstadoLote {
+  id: string;
+  tanque_id: string;
+  fecha: string;
+  estado_anterior: EstadoLote;
+  estado_nuevo: EstadoLote;
+  nota: string | null;
+  created_at: string;
+}
+
 export type TipoTanque = "terminado" | "subproducto";
 
 export interface TanqueLiquido {
@@ -52,11 +70,14 @@ export interface TanqueLiquido {
   tipo: TipoTanque;
   capacidad_litros: number | null;
   lote: string | null;
+  // Estado del lote (solo tanques terminados).
+  estado: EstadoLote;
   activo: boolean;
   created_at: string;
 }
 
-export type MotivoLiquido = "lote" | "destilacion" | "embotellado" | "otro" | "ajuste";
+// "estado" solo existe en el Registro: son los cambios de estado de un lote mostrados junto a los movimientos.
+export type MotivoLiquido = "lote" | "destilacion" | "embotellado" | "otro" | "ajuste" | "estado";
 
 export interface MovimientoLiquido {
   id: string;
@@ -178,6 +199,7 @@ export interface TanqueDashboard {
 
 export interface TanqueTerminadoDashboard extends TanqueDashboard {
   lote: string | null;
+  estado: EstadoLote;
 }
 
 export interface LineaLiquidos {
@@ -190,6 +212,8 @@ export interface LineaLiquidos {
   terminado: TanqueTerminadoDashboard | null;
   // Cada lote terminado vigente, el más nuevo primero.
   terminados: TanqueTerminadoDashboard[];
+  // Litros de lotes en proceso o en reposo (no cuentan en el total terminado).
+  en_preparacion_litros: number;
   subs: TanqueDashboard[];
 }
 

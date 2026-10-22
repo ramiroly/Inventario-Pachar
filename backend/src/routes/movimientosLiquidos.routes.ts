@@ -44,6 +44,7 @@ const loteNuevoSchema = z.object({
   capacidad_litros: z.number().positive().nullish(),
   litros: z.number().positive().max(1_000_000),
   fecha: z.string().date(),
+  estado: z.enum(["proceso", "reposo", "terminado"]).default("proceso"),
   numero_documento: z.string().trim().min(1).max(50).nullish(),
   nota: textoOpcional(200),
 });
@@ -161,10 +162,11 @@ movimientosLiquidosRouter.post("/lote-nuevo", requireRole("admin"), async (req, 
   const capacidadHabitual = Math.max(0, ...(existentes ?? []).map((t) => Number(t.capacidad_litros ?? 0)));
   const capacidad = p.capacidad_litros ?? (capacidadHabitual || 2500);
 
-  const nombre = `${linea.nombre.toLocaleUpperCase("es")} ${lote.toLocaleUpperCase("es")} TERMINADO`;
+  // El nombre no lleva el estado (en proceso, en reposo, terminado): eso es un dato aparte del lote.
+  const nombre = `${linea.nombre.toLocaleUpperCase("es")} ${lote.toLocaleUpperCase("es")}`;
   const { data: tanque, error: tanqueError } = await supabase
     .from("tanques_liquidos")
-    .insert({ linea_id: p.linea_id, nombre, tipo: "terminado", capacidad_litros: capacidad, lote })
+    .insert({ linea_id: p.linea_id, nombre, tipo: "terminado", capacidad_litros: capacidad, lote, estado: p.estado })
     .select()
     .single();
   if (tanqueError) return res.status(500).json({ error: tanqueError.message });
