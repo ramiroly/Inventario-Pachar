@@ -33,6 +33,7 @@ export const DESTINOS_HABITUALES = [
   "Almacén Lima",
   "Almacén Cusco",
   "Tienda Pachar",
+  "Barra Pachar",
   "Tambo del Inca",
   "El Albergue",
   "Tienda Chuncho",

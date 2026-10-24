@@ -665,7 +665,7 @@ function SalidasSection({ salidas }: { salidas: DashboardStockResponse["salidas"
   );
 }
 
-const DEST_COLORS = ["#1A5276", "#C0392B", "#117A65", "#D4811A", "#6C3483", "#7D6608", "#2E86C1", "#A04000"];
+const DEST_COLORS = ["#1A5276", "#C0392B", "#117A65", "#D4811A", "#6C3483", "#7D6608", "#2E86C1", "#A04000", "#5D6D7E"];
 
 function SalidasPorLineaChart({ porDestino }: { porDestino: DashboardStockResponse["salidas"]["por_destino"] }) {
   const totals = new Map<string, number>();
