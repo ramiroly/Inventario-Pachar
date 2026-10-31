@@ -24,7 +24,7 @@ export interface ReporteStock {
   total_unidades: number;
 }
 
-const ORDEN_LINEAS = ["Matacuy", "Salqa Azul", "Salqa Verde", "Añejo", "Reposado", "Cosecha", "Botanizado", "Licor de Café"];
+const ORDEN_LINEAS = ["Matacuy", "Salqa Azul", "Salqa Verde", "Añejo", "Reposado", "Cosecha", "Botanizado", "Licor de Café", "Caña Mater"];
 export const ordenLinea = (nombre: string) => {
   const i = ORDEN_LINEAS.indexOf(nombre);
   return i === -1 ? ORDEN_LINEAS.length : i;
