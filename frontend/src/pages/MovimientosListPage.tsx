@@ -4,6 +4,7 @@ import logoMarca from "../assets/logo-marca.png";
 import { AnularDialog } from "../components/AnularDialog";
 import { SubPestanas, SUBPESTANAS_MOVIMIENTOS } from "../components/SubPestanas";
 import { api } from "../lib/api";
+import { ordenLinea, ordenProducto } from "../lib/lineas";
 import { useAuth } from "../lib/useAuth";
 import type { Linea, MovimientoTerminado, ProductoTerminado } from "../types/models";
 import styles from "./movimientosList.module.css";
@@ -30,6 +31,17 @@ const formatoUnidades = (n: number) => n.toLocaleString("es-PE");
 
 // "EG07 - 520", "eg07-520" y "EG07 -520" son el mismo número.
 const normalizarNumero = (n: string) => n.replace(/\s+/g, "").toUpperCase();
+
+// Número final del documento ("EG07 - 520" -> 520, "N° 233" -> 233) para ordenar de mayor a menor.
+function numeroFinal(doc: string): number {
+  const m = /(\d+)\s*$/.exec(doc);
+  return m ? Number(m[1]) : -1;
+}
+
+// Los movimientos de un mismo documento van seguidos: no se mezclan con los de otro documento del mismo día.
+function claveGrupo(m: MovimientoTerminado): string {
+  return `${m.fecha}|${tipoDe(m)}|${normalizarNumero(m.numero_documento ?? "")}`;
+}
 
 function formatoFecha(iso: string) {
   const [a, m, d] = iso.split("-");
@@ -77,15 +89,35 @@ export function MovimientosListPage() {
   const productosPorId = useMemo(() => new Map(productos.map((p) => [p.id, p])), [productos]);
   const lineasPorId = useMemo(() => new Map(lineas.map((l) => [l.id, l])), [lineas]);
 
-  const filas = useMemo(
-    () =>
-      movimientos.map((m) => {
-        const producto = productosPorId.get(m.producto_id);
-        const linea = producto ? lineasPorId.get(producto.linea_id) : undefined;
-        return { mov: m, producto, linea };
-      }),
-    [movimientos, productosPorId, lineasPorId]
-  );
+  // Orden: fecha (la más reciente primero); dentro del día, entradas, salidas y ajustes; dentro de cada tipo,
+  // un documento tras otro (el de número mayor primero, y los sin documento al final); dentro de cada
+  // documento, los productos por línea y presentación (750, 375, 50, exportación, garrafa).
+  const filas = useMemo(() => {
+    const ordenTipo = { entrada: 0, salida: 1, ajuste: 2 };
+    const lista: Fila[] = movimientos.map((m) => {
+      const producto = productosPorId.get(m.producto_id);
+      const linea = producto ? lineasPorId.get(producto.linea_id) : undefined;
+      return { mov: m, producto, linea };
+    });
+    return lista.sort((a, b) => {
+      if (a.mov.fecha !== b.mov.fecha) return a.mov.fecha < b.mov.fecha ? 1 : -1;
+      const ta = tipoDe(a.mov);
+      const tb = tipoDe(b.mov);
+      if (ta !== tb) return ordenTipo[ta] - ordenTipo[tb];
+      const da = normalizarNumero(a.mov.numero_documento ?? "");
+      const db = normalizarNumero(b.mov.numero_documento ?? "");
+      if (da !== db) {
+        if (!da) return 1;
+        if (!db) return -1;
+        return numeroFinal(db) - numeroFinal(da) || (da < db ? -1 : 1);
+      }
+      return (
+        ordenLinea(a.linea?.nombre ?? "") - ordenLinea(b.linea?.nombre ?? "") ||
+        (a.producto && b.producto ? ordenProducto(a.producto) - ordenProducto(b.producto) : 0) ||
+        (a.producto?.descripcion ?? "").localeCompare(b.producto?.descripcion ?? "", "es")
+      );
+    });
+  }, [movimientos, productosPorId, lineasPorId]);
 
   const filasFiltradas = useMemo(() => {
     const q = texto.trim().toLowerCase();
@@ -289,10 +321,12 @@ export function MovimientosListPage() {
               </tr>
             </thead>
             <tbody>
-              {filasFiltradas.map((fila) => {
+              {filasFiltradas.map((fila, i) => {
                 const { mov, producto, linea } = fila;
+                const inicioGrupo = i > 0 && claveGrupo(filasFiltradas[i - 1].mov) !== claveGrupo(mov);
+                const clases = [mov.anulado ? styles.filaAnulada : "", inicioGrupo ? styles.inicioGrupo : ""].filter(Boolean).join(" ");
                 return (
-                <tr key={mov.id} className={mov.anulado ? styles.filaAnulada : undefined}>
+                <tr key={mov.id} className={clases || undefined}>
                   <td>{formatoFecha(mov.fecha)}</td>
                   <td>
                     <span className={claseBadge(tipoDe(mov))}>{ETIQUETA_TIPO[tipoDe(mov)]}</span>

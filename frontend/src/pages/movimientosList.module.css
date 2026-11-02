@@ -162,6 +162,9 @@
   vertical-align: middle;
   white-space: nowrap;
 }
+.table tbody tr.inicioGrupo td {
+  border-top: 2px solid #b8b8b8;
+}
 .table tbody tr:hover td {
   background: rgba(0, 0, 0, 0.025);
 }
