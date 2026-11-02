@@ -5,7 +5,7 @@ import { api } from "../lib/api";
 import { DESTINOS_HABITUALES } from "../lib/destinos";
 import { mensajeError } from "../lib/errores";
 import { hoyLocal } from "../lib/fechas";
-import { ordenLinea } from "../lib/lineas";
+import { ordenLinea, ordenProducto } from "../lib/lineas";
 import type { Linea, ProductoTerminado } from "../types/models";
 import styles from "./movimientos.module.css";
 
@@ -56,7 +56,12 @@ export function MovimientosFormPage() {
     () =>
       [...lineas]
         .sort((a, b) => ordenLinea(a.nombre) - ordenLinea(b.nombre))
-        .map((linea) => ({ linea, items: productos.filter((p) => p.linea_id === linea.id) }))
+        .map((linea) => ({
+          linea,
+          items: productos
+            .filter((p) => p.linea_id === linea.id)
+            .sort((a, b) => ordenProducto(a) - ordenProducto(b)),
+        }))
         .filter((g) => g.items.length > 0),
     [lineas, productos]
   );
