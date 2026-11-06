@@ -8,7 +8,7 @@ import { formatNum } from "../shared/format";
 import styles from "./comparativo.module.css";
 
 // Mismo orden y colores que COMPARATIVA TERMINADOS 1 DE SETIEMBRE.html.
-const LN = ["Matacuy", "Licor de Café", "Añejo", "Reposado", "Botanizado", "Salqa Verde", "Cosecha", "Salqa Azul", "Caña Mater"];
+const LN = ["Matacuy", "Licor de Café", "Añejo", "Reposado", "Botanizado", "Salqa Verde", "Cosecha", "Salqa Azul", "Caña Mater", "Manzanilla Hidratada 40%"];
 const LC: Record<string, string> = {
   Matacuy: "#A0501A",
   "Salqa Azul": "#C0392B",
@@ -19,6 +19,7 @@ const LC: Record<string, string> = {
   Botanizado: "#C9702E",
   "Licor de Café": "#7A3B12",
   "Caña Mater": "#8A9A2B",
+  "Manzanilla Hidratada 40%": "#C27C0E",
 };
 // El gráfico principal usa azul plano (no por línea) para ambas barras —
 // LC (arriba) se usa solo para el nombre de línea en la tabla ejecutiva.
@@ -33,6 +34,7 @@ const LINE_COLORS_DETAIL: Record<string, { dark: string; light: string }> = {
   Matacuy: { dark: "#035B01", light: "#4FC150" },
   "Licor de Café": { dark: "#422302", light: "#A99C8D" },
   "Caña Mater": { dark: "#5E6B14", light: "#C3D17A" },
+  "Manzanilla Hidratada 40%": { dark: "#8A5A00", light: "#E8C26A" },
   Añejo: { dark: "#622211", light: "#B89B93" },
   Reposado: { dark: "#117A65", light: "#76C5B8" },
   Botanizado: { dark: "#009124", light: "#52C65E" },

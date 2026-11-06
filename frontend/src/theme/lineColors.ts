@@ -15,6 +15,7 @@ export const LINE_COLORS_FALLBACK: Record<string, { dark: string; light: string;
   Botanizado: { dark: "#009124", light: "#A9DFBF", sub: "#0B7B1E" },
   "Licor de Café": { dark: "#422302", light: "#D7BDE2", sub: "#5D3215" },
   "Caña Mater": { dark: "#7A8B1F", light: "#D4E09B", sub: "#8FA02A" },
+  "Manzanilla Hidratada 40%": { dark: "#A56A00", light: "#F3D9A4", sub: "#C58A00" },
 };
 
 export function getLineColors(nombreLinea: string) {

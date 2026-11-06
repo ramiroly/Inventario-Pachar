@@ -10,7 +10,7 @@ import styles from "./stock.module.css";
 
 // Mismo orden y colores por línea que INVENTARIOS TERMINADOS 1 SETIEMBRE.html
 // (paleta específica de este dashboard — no la de la tabla `lineas`).
-const LN = ["Matacuy", "Licor de Café", "Añejo", "Reposado", "Botanizado", "Salqa Verde", "Cosecha", "Salqa Azul", "Caña Mater"];
+const LN = ["Matacuy", "Licor de Café", "Añejo", "Reposado", "Botanizado", "Salqa Verde", "Cosecha", "Salqa Azul", "Caña Mater", "Manzanilla Hidratada 40%"];
 const LC: Record<string, string> = {
   Matacuy: "#1A5276",
   "Salqa Azul": "#C0392B",
@@ -21,6 +21,7 @@ const LC: Record<string, string> = {
   Botanizado: "#A04000",
   "Licor de Café": "#0F6E56",
   "Caña Mater": "#7A8B1F",
+  "Manzanilla Hidratada 40%": "#B9770E",
 };
 const FMT_COLORS = { f750: "#1A5276", f375: "#117A65", f50: "#D4811A" };
 

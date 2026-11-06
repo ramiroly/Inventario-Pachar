@@ -47,6 +47,7 @@ export function LiquidosMovimientoPage() {
   const [lineaId, setLineaId] = useState("");
   const [loteTexto, setLoteTexto] = useState("");
   const [capacidad, setCapacidad] = useState("");
+  const [origenes, setOrigenes] = useState<{ tanqueId: string; litros: string }[]>([]);
   const [fecha, setFecha] = useState(hoyLocal);
   const [numero, setNumero] = useState("");
   const [nota, setNota] = useState("");
@@ -136,10 +137,20 @@ export function LiquidosMovimientoPage() {
   const nombreNuevoTanque =
     lineaLote && loteNormalizado ? `${lineaLote.nombre.toLocaleUpperCase("es")} ${loteNormalizado.toLocaleUpperCase("es")}` : null;
 
+  // Lote preparado con otros tanques: lo que falta para llegar a los litros del lote es agua.
+  const litrosLote = parseLitros(litros);
+  const usadoOrigenes = redondear(origenes.reduce((acc, o) => acc + (parseLitros(o.litros) ?? 0), 0));
+  const aguaLote = litrosLote !== null ? redondear(litrosLote - usadoOrigenes) : null;
+
+  function cambiarOrigen(i: number, cambio: Partial<{ tanqueId: string; litros: string }>) {
+    setOrigenes((lista) => lista.map((o, j) => (j === i ? { ...o, ...cambio } : o)));
+  }
+
   function cambiarDireccion(d: Direccion) {
     setDireccion(d);
     setMotivo(d === "ajuste" || d === "estado" ? "otro" : MOTIVOS[d][0].id);
     setEstadoNuevo("");
+    setOrigenes([]);
     setTanqueId("");
     setProductoId("");
     setError(null);
@@ -148,6 +159,7 @@ export function LiquidosMovimientoPage() {
 
   function cambiarMotivo(m: Motivo) {
     setMotivo(m);
+    setOrigenes([]);
     setTanqueId("");
     setProductoId("");
     setError(null);
@@ -165,17 +177,34 @@ export function LiquidosMovimientoPage() {
       if (!loteTexto.trim()) throw new Error("Escribe el lote (por ejemplo Lote 29).");
       if (l === null || l <= 0) throw new Error("Escribe los litros del lote (mayor a 0).");
       if (cap !== null && cap <= 0) throw new Error("La capacidad debe ser mayor a 0.");
-      const r = await api.post<{ tanque: TanqueLiquido }>("/movimientos-liquidos/lote-nuevo", {
+      const origenesValidos = origenes.map((o) => ({ tanque_id: o.tanqueId, litros: parseLitros(o.litros) }));
+      if (origenesValidos.some((o) => !o.tanque_id || o.litros === null || o.litros <= 0)) {
+        throw new Error("Cada tanque de origen necesita el tanque y los litros usados (mayor a 0).");
+      }
+      if (new Set(origenesValidos.map((o) => o.tanque_id)).size !== origenesValidos.length) {
+        throw new Error("Un tanque de origen está repetido.");
+      }
+      if (origenesValidos.length > 0 && usadoOrigenes > l) {
+        throw new Error("Los litros usados de otros tanques superan los litros del lote.");
+      }
+      const r = await api.post<{ tanque: TanqueLiquido; agua_litros: number }>("/movimientos-liquidos/lote-nuevo", {
         linea_id: lineaId,
         lote: loteTexto.trim(),
         capacidad_litros: cap,
         litros: l,
         estado: estadoInicial,
+        origenes: origenesValidos,
         ...comunes,
       });
-      setMensaje(`Lote nuevo registrado: ${r.tanque.nombre} (${ETIQUETA_ESTADO[estadoInicial].toLowerCase()}) con ${formatoLitros(l)} L.`);
+      setMensaje(
+        `Lote nuevo registrado: ${r.tanque.nombre} (${ETIQUETA_ESTADO[estadoInicial].toLowerCase()}) con ${formatoLitros(l)} L` +
+          (origenesValidos.length > 0
+            ? `, de los cuales ${formatoLitros(usadoOrigenes)} L salieron de otros tanques y ${formatoLitros(r.agua_litros)} L son agua.`
+            : ".")
+      );
       setLoteTexto("");
       setLitros("");
+      setOrigenes([]);
       return;
     }
 
@@ -412,6 +441,86 @@ export function LiquidosMovimientoPage() {
                       </option>
                     ))}
                   </select>
+                </div>
+                <div className={styles.field}>
+                  <span className={styles.label}>Mezcla de otros tanques (opcional)</span>
+                  <p className={styles.hint}>
+                    Si el lote se preparó con destilado de otros tanques y agua para bajar el grado, elige de qué tanques salió y cuántos litros. Lo que falte
+                    para llegar a los litros del lote se anota como agua.
+                  </p>
+                  {origenes.map((o, i) => {
+                    const saldoOrigen = saldos[o.tanqueId]?.esperado;
+                    const litrosOrigen = parseLitros(o.litros);
+                    const baseOrigen = saldos[o.tanqueId]?.base_fecha ?? null;
+                    return (
+                      <div key={i}>
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 120px auto", gap: 10 }}>
+                          <select
+                            aria-label="Tanque de origen"
+                            className={styles.input}
+                            value={o.tanqueId}
+                            onChange={(e) => cambiarOrigen(i, { tanqueId: e.target.value })}
+                          >
+                            <option value="" disabled>
+                              Selecciona un tanque...
+                            </option>
+                            {gruposTanques.map(({ linea, tanques: lista }) => (
+                              <optgroup key={linea.id} label={linea.nombre}>
+                                {lista.map((t) => (
+                                  <option key={t.id} value={t.id}>
+                                    {t.nombre} · {formatoLitros(saldos[t.id]?.esperado ?? 0)} L
+                                  </option>
+                                ))}
+                              </optgroup>
+                            ))}
+                          </select>
+                          <input
+                            aria-label="Litros usados"
+                            className={styles.input}
+                            type="text"
+                            inputMode="decimal"
+                            autoComplete="off"
+                            placeholder="Litros"
+                            value={o.litros}
+                            onChange={(e) => cambiarOrigen(i, { litros: e.target.value.replace(/[^\d.,]/g, "") })}
+                          />
+                          <button
+                            type="button"
+                            className={styles.input}
+                            style={{ cursor: "pointer", width: 46, padding: 0 }}
+                            aria-label="Quitar tanque de origen"
+                            onClick={() => setOrigenes((lista) => lista.filter((_, j) => j !== i))}
+                          >
+                            ✕
+                          </button>
+                        </div>
+                        {saldoOrigen !== undefined && litrosOrigen !== null && litrosOrigen > saldoOrigen && (
+                          <p className={styles.hint}>Ojo: ese tanque tiene {formatoLitros(saldoOrigen)} L según el sistema.</p>
+                        )}
+                        {baseOrigen && fecha <= baseOrigen && (
+                          <p className={styles.hint}>
+                            Ojo: la fecha es igual o anterior a la última medición de ese tanque ({formatoFecha(baseOrigen)}); el sistema da esa salida por
+                            incluida en la medición y no bajará su nivel.
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })}
+                  <button
+                    type="button"
+                    className={styles.input}
+                    style={{ cursor: "pointer", width: "fit-content" }}
+                    onClick={() => setOrigenes((lista) => [...lista, { tanqueId: "", litros: "" }])}
+                  >
+                    + Agregar tanque de origen
+                  </button>
+                  {origenes.length > 0 && aguaLote !== null && (
+                    <p className={styles.hint}>
+                      {aguaLote >= 0
+                        ? `Usado de otros tanques: ${formatoLitros(usadoOrigenes)} L · Agua agregada: ${formatoLitros(aguaLote)} L · Lote: ${formatoLitros(litrosLote ?? 0)} L.`
+                        : "Los litros usados de otros tanques superan los litros del lote."}
+                    </p>
+                  )}
                 </div>
                 {nombreNuevoTanque && <p className={styles.hint}>Se creará el tanque “{nombreNuevoTanque}”.</p>}
               </>

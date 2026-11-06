@@ -10,7 +10,7 @@ import styles from "./liquidos.module.css";
 
 // Orden fijo de líneas de INVENTARIO DE LIQUIDOS 1 DE SETIEMBRE.html (distinto
 // del orden usado en Stock/Comparativo — cada dashboard original tenía el suyo).
-const LN = ["Matacuy", "Salqa Azul", "Salqa Verde", "Añejo", "Reposado", "Cosecha", "Botanizado", "Licor de Café", "Caña Mater"];
+const LN = ["Matacuy", "Salqa Azul", "Salqa Verde", "Añejo", "Reposado", "Cosecha", "Botanizado", "Licor de Café", "Caña Mater", "Manzanilla Hidratada 40%"];
 const COLOR_ANTERIOR_CHART = "#A7D7C5";
 
 // Réplica exacta de bSty/bLbl del HTML original (colores inline por umbral

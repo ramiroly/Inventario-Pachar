@@ -47,6 +47,8 @@ const loteNuevoSchema = z.object({
   estado: z.enum(["proceso", "reposo", "terminado"]).default("proceso"),
   numero_documento: z.string().trim().min(1).max(50).nullish(),
   nota: textoOpcional(200),
+  // Tanques de los que sale el destilado del lote; lo que falta para llegar a los litros del lote es agua.
+  origenes: z.array(z.object({ tanque_id: z.string().uuid(), litros: z.number().positive().max(1_000_000) })).max(10).default([]),
 });
 
 movimientosLiquidosRouter.get("/", requireRole("admin"), async (req, res) => {
@@ -147,6 +149,30 @@ movimientosLiquidosRouter.post("/lote-nuevo", requireRole("admin"), async (req, 
   const { data: linea } = await supabase.from("lineas").select("id, nombre").eq("id", p.linea_id).single();
   if (!linea) return res.status(400).json({ error: "La línea no existe." });
 
+  // Lote preparado con otros tanques (y agua para bajar el grado): cada origen debe ser distinto,
+  // estar vigente, y lo usado no puede superar los litros del lote.
+  const origenes = p.origenes;
+  if (new Set(origenes.map((o) => o.tanque_id)).size !== origenes.length) {
+    return res.status(400).json({ error: "Un tanque de origen está repetido." });
+  }
+  const usado = redondear(origenes.reduce((acc, o) => acc + o.litros, 0));
+  if (usado > p.litros) {
+    return res.status(400).json({ error: "Los litros usados de otros tanques superan los litros del lote." });
+  }
+  const agua = redondear(p.litros - usado);
+  const nombreOrigen = new Map<string, string>();
+  if (origenes.length > 0) {
+    const { data: tanquesOrigen } = await supabase
+      .from("tanques_liquidos")
+      .select("id, nombre, activo")
+      .in("id", origenes.map((o) => o.tanque_id));
+    for (const o of origenes) {
+      const t = (tanquesOrigen ?? []).find((x) => x.id === o.tanque_id);
+      if (!t || t.activo === false) return res.status(400).json({ error: "Un tanque de origen no existe o ya está marcado como terminado." });
+      nombreOrigen.set(o.tanque_id, t.nombre);
+    }
+  }
+
   // "29" y "Lote 29" son el mismo lote.
   const lote = /^\d+$/.test(p.lote) ? `Lote ${p.lote}` : p.lote;
 
@@ -164,6 +190,10 @@ movimientosLiquidosRouter.post("/lote-nuevo", requireRole("admin"), async (req, 
 
   // El nombre no lleva el estado (en proceso, en reposo, terminado): eso es un dato aparte del lote.
   const nombre = `${linea.nombre.toLocaleUpperCase("es")} ${lote.toLocaleUpperCase("es")}`;
+  const detalleMezcla = `Mezcla: ${[
+    ...origenes.map((o) => `${o.litros} L de ${nombreOrigen.get(o.tanque_id)}`),
+    ...(agua > 0 ? [`${agua} L de agua`] : []),
+  ].join(" + ")}`;
   const { data: tanque, error: tanqueError } = await supabase
     .from("tanques_liquidos")
     .insert({ linea_id: p.linea_id, nombre, tipo: "terminado", capacidad_litros: capacidad, lote, estado: p.estado })
@@ -180,7 +210,7 @@ movimientosLiquidosRouter.post("/lote-nuevo", requireRole("admin"), async (req, 
       motivo: "lote",
       litros: p.litros,
       numero_documento: p.numero_documento ?? null,
-      nota: p.nota || null,
+      nota: [origenes.length > 0 ? detalleMezcla : null, p.nota || null].filter(Boolean).join(" · ") || null,
     })
     .select()
     .single();
@@ -189,5 +219,30 @@ movimientosLiquidosRouter.post("/lote-nuevo", requireRole("admin"), async (req, 
     return res.status(500).json({ error: movError.message });
   }
 
-  res.status(201).json({ tanque, movimiento });
+  // Lo usado de cada tanque de origen sale como "consumo para preparar un lote", con el mismo N° de registro.
+  let salidas: { id: string }[] = [];
+  if (origenes.length > 0) {
+    const { data, error: salidasError } = await supabase
+      .from("movimientos_liquidos")
+      .insert(
+        origenes.map((o) => ({
+          tanque_id: o.tanque_id,
+          fecha: p.fecha,
+          tipo: "egreso",
+          motivo: "lote",
+          litros: o.litros,
+          numero_documento: p.numero_documento ?? null,
+          nota: `Para ${nombre}`,
+        }))
+      )
+      .select("id");
+    if (salidasError) {
+      await supabase.from("movimientos_liquidos").delete().eq("id", movimiento.id);
+      await supabase.from("tanques_liquidos").delete().eq("id", tanque.id);
+      return res.status(500).json({ error: salidasError.message });
+    }
+    salidas = data ?? [];
+  }
+
+  res.status(201).json({ tanque, movimiento, salidas, agua_litros: origenes.length > 0 ? agua : 0 });
 });
