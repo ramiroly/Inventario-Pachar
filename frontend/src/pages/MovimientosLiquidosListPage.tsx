@@ -204,7 +204,7 @@ export function MovimientosLiquidosListPage() {
 
   return (
     <div className={styles.page}>
-      <div className={styles.shell}>
+      <div className={`${styles.shell} ${styles.shellAncho}`}>
         <SubPestanas opciones={SUBPESTANAS_LIQUIDOS} actual="/liquidos/cargar/registro" />
         <div className={styles.header}>
           <div>
@@ -281,7 +281,7 @@ export function MovimientosLiquidosListPage() {
         </div>
 
         <div className={styles.tableWrap}>
-          <table className={styles.table}>
+          <table className={`${styles.table} ${styles.tablaLiquidos}`}>
             <thead>
               <tr>
                 <th>Fecha</th>

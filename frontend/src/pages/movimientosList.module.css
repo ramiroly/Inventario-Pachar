@@ -413,3 +413,35 @@
   font-style: italic;
   color: var(--pachar-muted);
 }
+
+/* Registro de líquidos: cuadro más ancho y columnas de texto largo que se parten en dos líneas,
+   para ver el N° de registro y el botón Anular sin deslizar hacia los lados. */
+.shellAncho {
+  max-width: 1480px;
+}
+.tablaLiquidos th,
+.tablaLiquidos td {
+  padding: 9px 8px;
+  white-space: normal;
+}
+.tablaLiquidos th {
+  white-space: nowrap;
+}
+.tablaLiquidos td:nth-child(1),
+.tablaLiquidos td:nth-child(2),
+.tablaLiquidos td:nth-child(6),
+.tablaLiquidos td:nth-child(8),
+.tablaLiquidos td:nth-child(9) {
+  white-space: nowrap;
+}
+.tablaLiquidos td:nth-child(3),
+.tablaLiquidos td:nth-child(5) {
+  min-width: 80px;
+}
+.tablaLiquidos td:nth-child(4) {
+  min-width: 140px;
+}
+.tablaLiquidos td.celdaDetalle {
+  min-width: 150px;
+  max-width: none;
+}
